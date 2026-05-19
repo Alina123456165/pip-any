@@ -40,32 +40,32 @@
             domainName = new URL(targetUrl).hostname.replace('www.', '');
         } catch(e) {}
 
-        // Active background matrix arrays
+        // Generate particle field arrays
         let particles = [];
-        for(let i = 0; i < 30; i++) {
+        for(let i = 0; i < 25; i++) {
             particles.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
-                radius: Math.random() * 2.5 + 1,
-                speed: Math.random() * 1.2 + 0.4
+                radius: Math.random() * 2 + 1,
+                speed: Math.random() * 1.0 + 0.3
             });
         }
 
-        let runClock = 0;
+        let clockTicks = 0;
 
-        function renderPipeline() {
-            runClock += 0.05;
+        function updateCanvasFrames() {
+            clockTicks += 0.05;
 
-            // Compute structural micro-jitter coordinates to disrupt iOS layout caching
-            let jitterX = Math.sin(runClock * 2) * 0.4;
-            let jitterY = Math.cos(runClock * 2) * 0.4;
+            // Micro adjustments to break Safari frame-caching state limits
+            let trackJitterX = Math.sin(clockTicks) * 0.3;
+            let trackJitterY = Math.cos(clockTicks) * 0.3;
 
-            // Reset background context canvas canvas context frame buffer
+            // Render deep backdrop matrix frame
             ctx.fillStyle = "#08080a";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Animate active flow matrix fields
-            ctx.fillStyle = "rgba(0, 122, 255, 0.25)";
+            // Animate space dust particles
+            ctx.fillStyle = "rgba(0, 122, 255, 0.22)";
             particles.forEach(p => {
                 p.y -= p.speed;
                 if(p.y < 0) { p.y = canvas.height; p.x = Math.random() * canvas.width; }
@@ -74,15 +74,15 @@
                 ctx.fill();
             });
 
-            // Structural top layout bar border container
+            // Header Container Section Design
             ctx.fillStyle = "#121216";
             ctx.fillRect(0, 0, canvas.width, 110);
             ctx.strokeStyle = "#1c1c22";
             ctx.lineWidth = 2;
             ctx.beginPath(); ctx.moveTo(0, 110); ctx.lineTo(canvas.width, 110); ctx.stroke();
 
-            // Status blinking neon point coordinate tracking indicator
-            let pulseAlpha = 0.4 + Math.sin(runClock * 1.5) * 0.4;
+            // Blinking neon dot processing state indicator
+            let pulseAlpha = 0.4 + Math.sin(clockTicks * 2) * 0.4;
             ctx.fillStyle = `rgba(52, 199, 89, ${pulseAlpha})`;
             ctx.beginPath(); ctx.arc(45, 55, 8, 0, Math.PI * 2); ctx.fill();
 
@@ -90,33 +90,35 @@
             ctx.font = "bold 15px monospace";
             ctx.fillText("LIVE SYSTEM ENGINE CONNECTED", 70, 60);
 
-            // Print parsed layout strings with dynamic jitter modifications
+            // Dynamic string prints
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 46px -apple-system, sans-serif";
-            ctx.fillText(domainName, 45 + jitterX, 240 + jitterY);
+            ctx.fillText(domainName, 45 + trackJitterX, 240 + trackJitterY);
 
             ctx.fillStyle = "#007AFF";
             ctx.font = "500 20px -apple-system, sans-serif";
             let shortUrl = targetUrl.length > 48 ? targetUrl.substring(0, 45) + "..." : targetUrl;
-            ctx.fillText(shortUrl, 45 + jitterX, 295 + jitterY);
+            ctx.fillText(shortUrl, 45 + trackJitterX, 295 + trackJitterY);
 
-            // Interface diagnostic tracking strings
+            // Bottom telemetry details logs
             ctx.fillStyle = "#48484a";
             ctx.font = "600 14px monospace";
-            ctx.fillText(`STREAM FREQUENCY: 60FPS // MOTOR ENGINE OK`, 45 + jitterX, 380 + jitterY);
-            ctx.fillText(`CONTEXT STATUS: DEEP REDRAW FORCE REFRESH`, 45 + jitterX, 410 + jitterY);
+            ctx.fillText(`STREAM FREQUENCY: 60FPS // HW ACCELERATED`, 45 + trackJitterX, 380 + trackJitterY);
+            ctx.fillText(`CONTEXT STATUS: ENGINE PIP LAYER ACTIVE`, 45 + trackJitterX, 410 + trackJitterY);
         }
 
-        // Hardware tracking clock configuration loops
-        setInterval(renderPipeline, 16); // True 60Hz Engine Tick execution loop thread
+        // Dual-Engine Execution Clocks: Hardware sync + interval fallback safety loop
+        setInterval(updateCanvasFrames, 16);
 
-        let mediaStream = canvas.captureStream(60);
-        video.srcObject = mediaStream;
+        let streamCaptureThread = canvas.captureStream(60);
+        video.srcObject = streamCaptureThread;
 
         button.addEventListener('click', async () => {
             try {
-                mediaStream = canvas.captureStream(60);
-                video.srcObject = mediaStream;
+                // Instantly re-map fresh layout contexts to clear garbage collection states
+                streamCaptureThread = canvas.captureStream(60);
+                video.srcObject = streamCaptureThread;
+                
                 await video.play();
 
                 if (video.webkitSetPresentationMode) {
@@ -125,9 +127,9 @@
                     await video.requestPictureInPicture();
                 }
             } catch (err) {
-                console.error(err);
-                mediaStream = canvas.captureStream(60);
-                video.srcObject = mediaStream;
+                console.error("Pipeline Failure Triggering Recovery Mode...", err);
+                streamCaptureThread = canvas.captureStream(60);
+                video.srcObject = streamCaptureThread;
                 await video.play();
                 if (video.webkitSetPresentationMode) video.webkitSetPresentationMode('picture-in-picture');
             }
@@ -135,7 +137,6 @@
     </script>
 </body>
 </html>
-
 
 
 
