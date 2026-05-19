@@ -26,11 +26,19 @@
         const canvas = document.getElementById('renderCanvas');
         const ctx = canvas.getContext('2d');
 
+        const urlParams = new URLSearchParams(window.location.search);
+        let targetUrl = urlParams.get('url') || "https://wikipedia.org";
+
+        // If it's a desktop Wikipedia link, automatically swap it to mobile layout
+        if(targetUrl.includes("en.wikipedia.org") && !targetUrl.includes("en.m.wikipedia.org")) {
+            targetUrl = targetUrl.replace("en.wikipedia.org", "en.m.wikipedia.org");
+        }
+
         const img = new Image();
-        img.crossOrigin = "anonymous"; 
-        
-        // Target your local files directory sandbox route
-        img.src = "shareddocuments://Shortcuts/pip-view.jpg";
+        img.crossOrigin = "anonymous"; // Bypass canvas extraction rules
+
+        // Secure, automated proxy server renders the layout instantly into an image
+        img.src = "https://microlink.io" + encodeURIComponent(targetUrl) + "&screenshot=true&embed=screenshot.url";
 
         img.onload = function() {
             setInterval(() => {
@@ -39,13 +47,17 @@
 
             const stream = canvas.captureStream(10); 
             video.srcObject = stream;
-            video.play().catch(e => console.log("Awaiting finger tap"));
+            video.play().catch(e => console.log("Awaiting interaction"));
         };
 
-        // Fallback option if local filesystem route is blocked by Safari browser context
         img.onerror = function() {
-            img.src = "apple-shortcuts://run-shortcut?name=Run%20Script%201";
-        }
+            // Draw a quick manual fallback warning box if the website rejects proxy rendering
+            ctx.fillStyle = "#222";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#fff";
+            ctx.font = "20px Arial";
+            ctx.fillText("Webpage layout pending image render loop...", 40, 100);
+        };
 
         button.addEventListener('click', async () => {
             try {
@@ -61,6 +73,7 @@
     </script>
 </body>
 </html>
+
 
 
 
