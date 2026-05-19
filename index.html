@@ -3,112 +3,113 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #050508; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000000; font-family: -apple-system, BlinkMacSystemFont, sans-serif; overflow-x: hidden; }
         
-        /* FIX: Pushed down significantly to prevent getting trapped under the Safari header */
-        #container {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; padding: 20px; box-sizing: border-box;
+        /* Persistent Top Control Header */
+        #controlHeader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 85px;
+            background: rgba(10, 10, 12, 0.95); backdrop-filter: blur(10px);
+            display: flex; align-items: center; justify-content: center;
+            box-sizing: border-box; padding: 10px 20px; z-index: 9999;
+            border-bottom: 1px solid #1c1c24;
         }
 
         #pipBtn { 
-            width: 100%; max-width: 400px; height: 65px; 
-            background: #007AFF; color: white; border: none; font-size: 16px; 
-            font-weight: bold; border-radius: 16px; cursor: pointer;
-            box-shadow: 0px 4px 20px rgba(0,122,255,0.4); transition: transform 0.1s ease;
+            width: 100%; max-width: 500px; height: 50px; 
+            background: #007AFF; color: white; border: none; font-size: 15px; 
+            font-weight: bold; border-radius: 12px; cursor: pointer;
+            box-shadow: 0px 4px 15px rgba(0,122,255,0.3);
         }
-        #pipBtn:active { transform: scale(0.98); background: #0056b3; }
+        #pipBtn:active { background: #0056b3; }
         
-        #statusCard {
-            width: 100%; max-width: 400px; background: #12121c; border: 1px solid #1c1c2e;
-            border-radius: 16px; padding: 20px; margin-top: 30px; box-sizing: border-box;
+        /* The Actual Visual Web View Panel */
+        #contentWrapper {
+            margin-top: 95px; width: 100%; padding: 15px; box-sizing: border-box;
         }
-        .label { color: #8e8e93; font-size: 12px; font-weight: bold; letter-spacing: 1px; margin-bottom: 5px; }
-        .value { color: #ffffff; font-size: 16px; font-weight: 500; word-break: break-all; }
+        iframe { width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: #ffffff; }
         
-        video { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0.01; pointer-events: none; }
+        /* Internal Engine Elements Hidden Out of View */
+        canvas { position: absolute; top: -9999px; left: -9999px; width: 480px; height: 270px; }
+        video { position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; opacity: 0.01; }
     </style>
 </head>
 <body>
 
-    <div id="container">
+    <div id="controlHeader">
         <button id="pipBtn">⚡️ POP LIVE PAGE INTO FLOATING WINDOW ⚡️</button>
-        
-        <div id="statusCard">
-            <div class="label">TARGET DOMAIN</div>
-            <div id="domVal" class="value">Loading stream...</div>
-            <br>
-            <div class="label">STREAM STATUS</div>
-            <div class="value" style="color: #34C759;">● PIP PIPELINE RE-CENTERED</div>
-        </div>
     </div>
-
-    <canvas id="renderCanvas" width="480" height="270" style="display:none;"></canvas>
-    <video id="pipVideo" playsinline muted loop></video>
+    
+    <div id="contentWrapper">
+        <iframe id="targetFrame"></iframe>
+    </div>
+    
+    <canvas id="streamCanvas" width="480" height="270"></canvas>
+    <video id="pipMediaTrack" playsinline muted loop></video>
 
     <script>
-        const video = document.getElementById('pipVideo');
+        const video = document.getElementById('pipMediaTrack');
         const button = document.getElementById('pipBtn');
-        const canvas = document.getElementById('renderCanvas');
+        const canvas = document.getElementById('streamCanvas');
+        const frame = document.getElementById('targetFrame');
         const ctx = canvas.getContext('2d');
 
         const urlParams = new URLSearchParams(window.location.search);
-        let targetUrl = urlParams.get('url') || "https://wikipedia.org";
+        let targetUrl = urlParams.get('url') || "https://en.m.wikipedia.org";
 
         if(targetUrl.includes("en.wikipedia.org") && !targetUrl.includes("en.m.wikipedia.org")) {
             targetUrl = targetUrl.replace("en.wikipedia.org", "en.m.wikipedia.org");
         }
         if (!targetUrl.startsWith('http')) { targetUrl = 'https://' + targetUrl; }
 
-        let domainName = "Webpage Stream";
-        try {
-            domainName = new URL(targetUrl).hostname.replace('www.', '');
-        } catch(e) {}
-        
-        document.getElementById('domVal').innerText = domainName;
+        frame.src = targetUrl;
 
-        // Build a beautiful high-contrast text overlay panel layout straight inside the native system stream
-        function drawVideoFrame() {
-            ctx.fillStyle = "#0a0a0f";
+        let hostString = "Webpage View";
+        try { hostString = new URL(targetUrl).hostname; } catch(e) {}
+
+        // Generates an unblockable ultra-clear text blueprint display inside the video channel
+        function processVideoMatrix() {
+            ctx.fillStyle = "#0d0d11";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Left branding marker accent line
+            
+            // Left Status Accents
             ctx.fillStyle = "#007AFF";
-            ctx.fillRect(0, 0, 8, canvas.height);
-
-            // Domain Text String
+            ctx.fillRect(0, 0, 6, canvas.height);
+            
             ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 28px -apple-system, sans-serif";
-            ctx.fillText(domainName, 30, 90);
-
-            // Sub-link Text String URL
-            ctx.fillStyle = "#0A84FF";
-            ctx.font = "14px -apple-system, sans-serif";
-            let printUrl = targetUrl.length > 50 ? targetUrl.substring(0, 47) + "..." : targetUrl;
-            ctx.fillText(printUrl, 30, 130);
-
-            // Status Bar Context Nodes
-            ctx.fillStyle = "rgba(255,255,255,0.05)";
-            ctx.fillRect(30, 170, 410, 40);
+            ctx.font = "bold 24px -apple-system, sans-serif";
+            ctx.fillText(hostString, 25, 75);
+            
+            ctx.fillStyle = "#8e8e93";
+            ctx.font = "13px -apple-system, sans-serif";
+            let displayPath = targetUrl.length > 55 ? targetUrl.substring(0, 52) + "..." : targetUrl;
+            ctx.fillText(displayPath, 25, 115);
+            
+            // Frame Asset Status Block
+            ctx.fillStyle = "rgba(255,255,255,0.03)";
+            ctx.fillRect(25, 155, 430, 80);
+            ctx.border = "1px solid rgba(255,255,255,0.1)";
             
             ctx.fillStyle = "#34C759";
-            ctx.beginPath(); ctx.arc(50, 190, 5, 0, Math.PI * 2); ctx.fill();
-
-            ctx.fillStyle = "#8e8e93";
+            ctx.beginPath(); ctx.arc(45, 195, 4, 0, Math.PI * 2); ctx.fill();
+            
+            ctx.fillStyle = "#34C759";
             ctx.font = "bold 11px monospace";
-            ctx.fillText("LIVE SITE CONTEXT ACTIVE // SECURE SYSTEM LINK", 65, 194);
+            ctx.fillText("LIVE RE-DIRECT SYSTEM CONNECTION ESTABLISHED", 60, 199);
+            
+            ctx.fillStyle = "#aeaeb2";
+            ctx.font = "11px monospace";
+            ctx.fillText("SWIPE UP TO OVERLAY ON HOME SCREEN", 60, 218);
         }
 
-        // Loop continuous frame refreshes to keep iOS system threads locked active
-        setInterval(drawVideoFrame, 100);
+        setInterval(processVideoMatrix, 60);
 
-        let activeStream = canvas.captureStream(10);
-        video.srcObject = activeStream;
+        let activeStreamNode = canvas.captureStream(30);
+        video.srcObject = activeStreamNode;
 
         button.addEventListener('click', async () => {
             try {
-                activeStream = canvas.captureStream(10);
-                video.srcObject = activeStream;
+                activeStreamNode = canvas.captureStream(30);
+                video.srcObject = activeStreamNode;
                 await video.play();
 
                 if (video.webkitSetPresentationMode) {
