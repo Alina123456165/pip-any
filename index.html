@@ -5,41 +5,45 @@
     <style>
         body { background: #000; color: #fff; text-align: center; font-family: sans-serif; }
         #launchBtn { width: 80%; padding: 20px; font-size: 18px; background: #007AFF; border-radius: 10px; border: none; color: white; margin-top: 50px; }
+        #hiddenInput { position: absolute; left: -9999px; }
         #status { margin-top: 20px; color: #888; }
         canvas { display: none; }
     </style>
 </head>
 <body>
     <button id="launchBtn">⚡️ STEP 1: PASTE DATA</button>
-    <div id="status">Tap button, then choose "Paste" from the menu.</div>
+    <textarea id="hiddenInput"></textarea>
+    <div id="status">Tap button, then select "Paste" when the menu appears.</div>
     <canvas id="streamCanvas" width="500" height="800"></canvas>
     <video id="vid" playsinline muted loop></video>
 
     <script>
         const btn = document.getElementById('launchBtn');
+        const hiddenInput = document.getElementById('hiddenInput');
         const vid = document.getElementById('vid');
         const canvas = document.getElementById('streamCanvas');
         const ctx = canvas.getContext('2d');
 
-        btn.onclick = async () => {
-            try {
-                // Manually trigger the paste operation
-                const text = await navigator.clipboard.readText();
-                if(!text) throw new Error("Empty");
-                
-                const img = new Image();
-                img.src = 'data:image/png;base64,' + text;
-                img.onload = () => {
-                    ctx.drawImage(img, 0, 0, 500, 800);
-                    vid.srcObject = canvas.captureStream(30);
-                    vid.play();
-                    vid.webkitSetPresentationMode('picture-in-picture');
-                };
-            } catch (e) {
-                // If it fails, force the browser to show the Paste menu
-                document.execCommand('paste');
-                alert("If it didn't launch, tap the button again and hit 'Paste'.");
-            }
+        btn.onclick = () => {
+            // 1. Focus the hidden input to trigger the iOS keyboard/menu
+            hiddenInput.focus();
+            // 2. We trigger the paste command manually
+            document.execCommand('paste');
+            
+            // 3. Process the data after a short delay to allow for the paste action
+            setTimeout(() => {
+                const text = hiddenInput.value;
+                if(text) {
+                    const img = new Image();
+                    img.src = 'data:image/png;base64,' + text;
+                    img.onload = () => {
+                        ctx.drawImage(img, 0, 0, 500, 800);
+                        vid.srcObject = canvas.captureStream(30);
+                        vid.play();
+                        vid.webkitSetPresentationMode('picture-in-picture');
+                    };
+                }
+            }, 500);
         };
     </script>
 </body>
