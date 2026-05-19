@@ -26,21 +26,17 @@
         const canvas = document.getElementById('renderCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Cleanly reads the query parameter safely passed via URL Encode
         const urlParams = new URLSearchParams(window.location.search);
         let targetUrl = urlParams.get('url');
 
-        // Fallback default if link parameter is missing
         if (!targetUrl) {
             targetUrl = "https://wikipedia.org";
         }
 
-        // Ensure the link layout targets the mobile framework version
         if(targetUrl.includes("en.wikipedia.org") && !targetUrl.includes("en.m.wikipedia.org")) {
             targetUrl = targetUrl.replace("en.wikipedia.org", "en.m.wikipedia.org");
         }
 
-        // Ensure secure http protocol header is appended correctly
         if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
             targetUrl = 'https://' + targetUrl;
         }
@@ -48,18 +44,24 @@
         const img = new Image();
         img.crossOrigin = "anonymous"; 
 
-        // Universal proxy engine renders the target site layout instantly
-        img.src = "https://thum.io" + targetUrl;
+        // Switching to WordPress's official, unlimited public thumbnail rendering engine
+        img.src = "https://wp.com" + encodeURIComponent(targetUrl) + "?w=600&h=1000";
 
         img.onload = function() {
-            // Keep painting the screenshot to keep the video stream track alive
             setInterval(() => {
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             }, 100);
 
             const stream = canvas.captureStream(10); 
             video.srcObject = stream;
-            video.play().catch(e => console.log("Awaiting user interaction"));
+            video.play().catch(e => console.log("Awaiting loop trigger"));
+        };
+
+        img.onerror = function() {
+            // Instantly retry loading if the initial handshake delays
+            setTimeout(() => {
+                img.src = "https://wp.com" + encodeURIComponent(targetUrl) + "?w=600&h=1000&r=" + Math.random();
+            }, 1000);
         };
 
         button.addEventListener('click', async () => {
@@ -73,11 +75,12 @@
                     button.style.display = 'none';
                 }
             } catch (err) {
-                alert("Canvas pipeline initializing. Tap once more.");
+                alert("Canvas initializing. Tap once more.");
             }
         });
     </script>
 </body>
 </html>
+
 
 
