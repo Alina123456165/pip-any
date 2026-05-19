@@ -3,82 +3,70 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #202124; font-family: sans-serif; }
         iframe { width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0; z-index: 1; }
         
-        /* The container button wrapper stays on top */
-        #btnContainer { 
-            position: absolute; top: 12px; left: 5%; width: 90%; height: 55px; 
-            background: #007AFF; border-radius: 12px; z-index: 10;
-            box-shadow: 0px 4px 12px rgba(0,0,0,0.6); overflow: hidden;
+        #pipBtn { 
+            position: absolute; top: 15px; left: 5%; width: 90%; height: 50px; 
+            background: #007AFF; color: white; border: none; font-size: 16px; 
+            font-weight: bold; border-radius: 12px; z-index: 10; cursor: pointer;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
         }
-
-        #btnText {
-            position: absolute; width: 100%; height: 100%; display: flex;
-            align-items: center; justify-content: center; color: white;
-            font-size: 16px; font-weight: bold; pointer-events: none; z-index: 11;
-        }
-
-        /* 100% visible but completely transparent via opacity layout rules */
-        #pipVideo { 
-            width: 100%; height: 100%; object-fit: cover; opacity: 0.01; 
-            z-index: 12; position: absolute; top: 0; left: 0; cursor: pointer;
-        }
+        /* Hidden canvas that changes static content into video packets */
+        canvas { display: none; }
+        video { position: absolute; bottom: 10px; right: 10px; width: 1px; height: 1px; opacity: 0.01; z-index: 5; }
     </style>
 </head>
 <body>
 
-    <div id="btnContainer">
-        <div id="btnText">⚡️ TAP HERE TO FLOAT PAGE ⚡️</div>
-        <!-- Built using a completely valid, tiny local base64 video file. 100% tracking immune -->
-        <video id="pipVideo" playsinline muted loop controls src="data:video/mp4;base64,AAAAIGZ0eXBtcDQyAAAAAG1wNDJpc29tYXZjMQAAAAVtb292AAAAbG12aGQAAAAAAAAAAAAAAAAAAAPoAAAAKAABAAABAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACYXRyYWsAAABcdGtoZAAAAAMAAAAAAAAAAAAAAAEAAAAAAAADNgAAAAAAAAAAAAAAAAAAAAEAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAGbZWRpYQAAACxtZGhkAAAAAAAAAAAAAAAAAAB9AAAAVQBUWFgAAAAAACxoZGxyAAAAAAAAAAB2aWRlAAAAAAAAAAAAAAAAVmlkZW9IYW5kbGVyAAAAAVxtaW5mAAAAEHZtY2hkAAAAAAAoAAAAFGRpbmYAAAAccmVmZAAAAA11cmwgAAAAAQAAAAGSbXRibAAAAHdzdHNkAAAAAAAAAAEAcG1wNDYAAAAAFmZcm0AAAAAAbXA0NgAAAAAAAAAmYmZybQAAAAAAbXA0NgAAAAAAAAAIdmNlcAAAAAAAc3R0cwAAAAAAAAABAAAAAQAAAFUAAAAAc3RzYwAAAAAAAAABAAAAAQAAAAEAAAABAAAAXHN0c3oAAAAAAAAAAAAAAAEAAAAUAAAAFwAAABgAAAAdAAAAHgAAACMAAAAmAAAAKwAAACwAAAAxAAAAMgAAADYAAAA3AAAAPAAAAD0AAABCAAAAQwAAAEgAAABJAAAATgAAAE8AAABUAAAAFXN0Y28AAAAAAAAAAQAAA0wAAAAA"></video>
-    </div>
-    
+    <button id="pipBtn">⚡️ POP PAGE INTO FLOATING WINDOW ⚡️</button>
     <iframe src="about:blank" id="webFrame"></iframe>
+
+    <canvas id="renderCanvas" width="400" height="600"></canvas>
+    <video id="pipVideo" playsinline muted loop></video>
 
     <script>
         const video = document.getElementById('pipVideo');
-        const container = document.getElementById('btnContainer');
+        const button = document.getElementById('pipBtn');
         const frame = document.getElementById('webFrame');
+        const canvas = document.getElementById('renderCanvas');
+        const ctx = canvas.getContext('2d');
 
+        // Grab current link from Siri Share Sheet input 
         const urlParams = new URLSearchParams(window.location.search);
-        let targetUrl = urlParams.get('url');
-
-        if (!targetUrl) {
-            targetUrl = "https://wikipedia.org";
-        } else {
-            if(targetUrl.includes("en.wikipedia.org")) {
-                targetUrl = targetUrl.replace("en.wikipedia.org", "en.m.wikipedia.org");
-            }
+        let targetUrl = urlParams.get('url') || "https://wikipedia.org";
+        if(targetUrl.includes("en.wikipedia.org")) {
+            targetUrl = targetUrl.replace("en.wikipedia.org", "en.m.wikipedia.org");
         }
-        
         frame.src = targetUrl;
 
-        // Force initialize video parameters locally
-        video.load();
+        // CANVAS STREAM GENERATOR: Converts text views into an active media loop
+        function startCanvasStream() {
+            ctx.fillStyle = "#202124";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "20px Arial";
+            ctx.fillText("Wikipedia Snapshot", 20, 50);
+            
+            // Generate a real 10fps fake video stream track out of the static canvas
+            const stream = canvas.captureStream(10); 
+            video.srcObject = stream;
+            video.play();
+        }
 
-        video.addEventListener('click', async (e) => {
-            e.preventDefault();
+        window.addEventListener('DOMContentLoaded', startCanvasStream);
+
+        button.addEventListener('click', async () => {
             try {
-                // Play locally
-                await video.play();
-                
-                // Immediately break out into the iOS hardware Picture-in-Picture window framework
                 if (video.webkitSetPresentationMode) {
                     video.webkitSetPresentationMode('picture-in-picture');
-                    container.style.display = 'none'; 
+                    button.style.display = 'none';
                 } else if (document.pictureInPictureEnabled) {
                     await video.requestPictureInPicture();
-                    container.style.display = 'none';
+                    button.style.display = 'none';
                 }
             } catch (err) {
-                // Secondary hardware fail-safe fallback loop
-                try {
-                    video.webkitSetPresentationMode('picture-in-picture');
-                    container.style.display = 'none';
-                } catch(fallbackErr) {
-                    console.log("Hardware blocked framework completely.");
-                }
+                alert("Please wait 2 seconds for canvas to buffer and try tap again.");
             }
         });
     </script>
