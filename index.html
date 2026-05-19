@@ -17,7 +17,7 @@
             font-weight: bold; border-radius: 10px; cursor: pointer;
             box-shadow: 0px 4px 15px rgba(0,122,255,0.3);
         }
-        #pipBtn:disabled { background: #1c1c1e; color: #ff9500; border: 1px solid #ff9500; cursor: not-allowed; }
+        #pipBtn:disabled { background: #1c1c1e; color: #34C759; border: 1px solid #34C759; cursor: not-allowed; }
         
         #statusText { color: #8e8e93; font-size: 12px; margin-top: 5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
 
@@ -28,8 +28,8 @@
 <body>
 
     <div id="controlHeader">
-        <button id="pipBtn" disabled>⏳ WAITING FOR SHORTCUT IMAGE...</button>
-        <div id="statusText">Processing local device stream...</div>
+        <button id="pipBtn" disabled>⏳ PROCESSING SCREENSHOT...</button>
+        <div id="statusText">Reading device stream payload...</div>
     </div>
     
     <canvas id="streamCanvas" width="800" height="1200"></canvas>
@@ -43,41 +43,45 @@
         const status = document.getElementById('statusText');
         const ctx = canvas.getContext('2d');
 
-        // Extract the native Base64 screenshot block from the URL parameters
+        // Extract the URL parameter string data
         const urlParams = new URLSearchParams(window.location.search);
-        let base64Data = urlParams.get('img');
+        let encodedData = urlParams.get('img');
 
-        if (base64Data) {
-            // Clean up standard URL character encoding spaces
-            base64Data = base64Data.replace(/ /g, '+');
-            
-            const nativeImg = new Image();
-            nativeImg.src = 'data:image/png;base64,' + base64Data;
+        if (encodedData) {
+            try {
+                // Decode the URL wrapper safely to access the clean Base64 string
+                let base64Data = decodeURIComponent(encodedData).replace(/ /g, '+');
+                
+                const nativeImg = new Image();
+                nativeImg.src = 'data:image/png;base64,' + base64Data;
 
-            nativeImg.onload = function() {
-                ctx.fillStyle = "#000000";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                // Draw your clean, local screenshot directly onto the canvas track
-                ctx.drawImage(nativeImg, 0, 0, canvas.width, canvas.height);
-                
-                video.srcObject = canvas.captureStream(30);
-                
-                button.disabled = false;
-                button.innerText = "⚡️ POP PAGE INTO FLOATING WINDOW ⚡️";
-                status.innerText = "NATIVE SHORTCUT SNAPSHOT READY.";
-                
-                // Start refresh loop to keep stream alive
-                setInterval(() => {
+                nativeImg.onload = function() {
+                    ctx.fillStyle = "#000000";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Stamp the screenshot to the active viewport
                     ctx.drawImage(nativeImg, 0, 0, canvas.width, canvas.height);
-                }, 33);
-            };
-            
-            nativeImg.onerror = function() {
-                status.innerText = "Error decoding device screenshot package.";
-            };
+                    
+                    video.srcObject = canvas.captureStream(30);
+                    
+                    button.disabled = false;
+                    button.innerText = "⚡️ POP PAGE INTO FLOATING WINDOW ⚡️";
+                    status.innerText = "DEVICE SNAPSHOT ENGAGED.";
+                    
+                    // Keep frame refreshes alive to defeat iOS 18 background sleeping
+                    setInterval(() => {
+                        ctx.drawImage(nativeImg, 0, 0, canvas.width, canvas.height);
+                    }, 33);
+                };
+                
+                nativeImg.onerror = function() {
+                    status.innerText = "Data parsing error. Image string corrupt.";
+                };
+            } catch (err) {
+                status.innerText = "Decoding failure. Check Shortcut variables.";
+            }
         } else {
-            status.innerText = "Missing snapshot parameter data. Update Shortcut.";
+            status.innerText = "Waiting for data. Link contains plain text instead of dynamic variables.";
         }
 
         button.addEventListener('click', async () => {
