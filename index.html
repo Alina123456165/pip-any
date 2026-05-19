@@ -17,64 +17,108 @@
             font-weight: bold; border-radius: 10px; cursor: pointer;
             box-shadow: 0px 4px 15px rgba(0,122,255,0.3);
         }
-        #pipBtn:disabled { background: #1c1c1e; color: #34C759; border: 1px solid #34C759; cursor: not-allowed; }
+        #pipBtn:disabled { background: #1c1c1e; color: #ff9500; border: 1px solid #ff9500; cursor: not-allowed; }
         
         #statusText { color: #8e8e93; font-size: 12px; margin-top: 5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* Render container matching exact phone layout dimensions */
-        #displayView {
-            position: absolute; top: 110px; left: 5%; width: 90%; height: calc(100vh - 130px);
-            background-size: contain; background-repeat: no-repeat; background-position: top center;
-            border-radius: 12px; display: block;
-        }
-        
-        /* Fixed native video node optimized for video-tracked background rendering */
-        video { position: absolute; top: 110px; left: 5%; width: 90%; height: auto; border-radius: 12px; background: #000; display: block; }
+        #hiddenImg { display: none; }
+        canvas { position: absolute; top: 110px; left: 5%; width: 90%; height: auto; border-radius: 8px; background: #111116; display: block; }
+        video { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0.01; z-index: 99999; pointer-events: none; }
     </style>
 </head>
 <body>
 
     <div id="controlHeader">
-        <button id="pipBtn" disabled>⏳ GENERATING SECURE SNAPSHOT...</button>
+        <button id="pipBtn" disabled>⏳ CAPTURING WEB IMAGE...</button>
         <div id="statusText">Bypassing origin filters...</div>
     </div>
     
-    <video id="pipMediaTrack" playsinline muted loop controls></video>
+    <img id="hiddenImg" />
+    <canvas id="streamCanvas" width="800" height="1200"></canvas>
+    
+    <video id="pipMediaTrack" playsinline muted loop src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA=="></video>
 
     <script>
         const video = document.getElementById('pipMediaTrack');
         const button = document.getElementById('pipBtn');
+        const canvas = document.getElementById('streamCanvas');
         const status = document.getElementById('statusText');
+        const img = document.getElementById('hiddenImg');
+        const ctx = canvas.getContext('2d');
 
         const urlParams = new URLSearchParams(window.location.search);
         let targetUrl = urlParams.get('url') || "https://en.m.wikipedia.org/wiki/Candy_bar";
         if (!targetUrl.startsWith('http')) { targetUrl = 'https://' + targetUrl; }
 
-        // Setup an open-source video encoder route that translates the link to a video stream file natively
-        const stableVideoUrl = `https://api.microlink.io/?url=${encodeURIComponent(targetUrl)}&screenshot=true&embed=screenshot.url`;
+        // Set up clean initial canvas background
+        ctx.fillStyle = "#111116";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 32px -apple-system, sans-serif";
+        ctx.fillText("Rendering unblocked snapshot...", 60, 160);
 
-        // Direct stream assignment to bypass canvas drawing
-        // This gives Safari an actual media file structure, satisfying its security rules 100%
-        video.src = "https://assets.mixkit.co/videos/preview/mixkit-abstract-laser-lights-background-loop-41743-large.mp4"; 
+        // Highly stable, fast rendering link format
+        const finalCaptureUrl = `https://api.urlbox.io/v1/ca5cf4c2-656b-4e86-9a2c-f698d9e60244/png?url=${encodeURIComponent(targetUrl)}&width=800&height=1200&force=true`;
+        
+        img.crossOrigin = "anonymous";
+        img.src = finalCaptureUrl;
 
-        video.oncanplay = function() {
+        let engineActive = false;
+        let toggle = 0;
+
+        img.onload = function() {
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+            // Connect the video pipeline immediately
+            video.srcObject = canvas.captureStream(30);
+            engineActive = true;
+
             button.disabled = false;
             button.innerText = "⚡️ POP PAGE INTO FLOATING WINDOW ⚡️";
-            status.innerText = "Pipeline verified. Ready to overlay.";
+            status.innerText = "Pipeline hot. Ready to launch.";
         };
+
+        img.onerror = function() {
+            // Instant absolute fallback if urlbox sandboxing delays
+            img.src = `https://mini.s-shot.ru/1024x768/800/jpeg/?${encodeURIComponent(targetUrl)}`;
+            status.innerText = "Switching to backup graphics pipeline...";
+        };
+
+        // Redraw loop to prevent the screen from going black in PiP mode
+        function refreshFrame() {
+            if (engineActive) {
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                toggle = (toggle + 1) % 2;
+                ctx.fillStyle = `rgba(0, 0, 0, ${toggle ? 0.01 : 0.02})`;
+                ctx.fillRect(0, 0, 1, 1);
+            }
+        }
+        setInterval(refreshFrame, 33);
 
         button.addEventListener('click', async () => {
             try {
+                // Play video track explicitly
                 await video.play();
+                
                 if (video.webkitSetPresentationMode) {
                     video.webkitSetPresentationMode('picture-in-picture');
                 } else if (document.pictureInPictureEnabled) {
                     await video.requestPictureInPicture();
                 }
             } catch (err) {
-                console.error(err);
-                // Secondary activation loop if engine lags
-                if (video.webkitSetPresentationMode) video.webkitSetPresentationMode('picture-in-picture');
+                console.error("PiP error, running secondary override:", err);
+                // Secondary fallback layer forcing Safari presentation changes
+                try {
+                    video.srcObject = canvas.captureStream(30);
+                    await video.play();
+                    if (video.webkitSetPresentationMode) {
+                        video.webkitSetPresentationMode('picture-in-picture');
+                    }
+                } catch(fatal) {
+                    status.innerText = "Safari blocked window. Try clicking again.";
+                }
             }
         });
     </script>
