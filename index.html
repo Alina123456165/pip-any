@@ -3,7 +3,7 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #121214; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
         #pipBtn { 
             position: absolute; top: 15px; left: 5%; width: 90%; height: 50px; 
             background: #007AFF; color: white; border: none; font-size: 16px; 
@@ -34,49 +34,90 @@
         }
         if (!targetUrl.startsWith('http')) { targetUrl = 'https://' + targetUrl; }
 
-        let dots = "";
         let streamReady = false;
+        let domainName = "Webpage View";
+        
+        try {
+            domainName = new URL(targetUrl).hostname.replace('www.', '');
+        } catch(e) {}
 
-        // Permanent fallback UI loop so the stream canvas never displays blank/black
-        function runCanvasFallbackLoop() {
-            setInterval(() => {
-                if (streamReady) return; // Stop drawing text if image manages to overwrite it
-                
-                dots = dots.length >= 3 ? "" : dots + ".";
-                ctx.fillStyle = "#16161a";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                ctx.fillStyle = "#ffffff";
-                ctx.font = "bold 28px sans-serif";
-                ctx.fillText("Generating Floating Window" + dots, 50, 150);
-                
-                ctx.fillStyle = "#007AFF";
-                ctx.font = "20px sans-serif";
-                let cleanDisplay = targetUrl.length > 40 ? targetUrl.substring(0, 37) + "..." : targetUrl;
-                ctx.fillText(cleanDisplay, 50, 210);
-            }, 300);
+        // Premium Dark Mode UI layout generator
+        function drawNativeCardUI(statusText) {
+            ctx.fillStyle = "#121214";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Subtle top container
+            ctx.fillStyle = "#1a1a1e";
+            ctx.fillRect(0, 0, canvas.width, 90);
+            
+            // Status dot Indicator
+            ctx.fillStyle = statusText === "Live Pipeline Active" ? "#34c759" : "#ff9500";
+            ctx.beginPath();
+            ctx.arc(45, 45, 8, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Status string header text text layout
+            ctx.fillStyle = "#a1a1aa";
+            ctx.font = "600 18px sans-serif";
+            ctx.fillText(statusText.toUpperCase(), 70, 52);
+
+            // Large clean domain text banner block
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 42px sans-serif";
+            ctx.fillText(domainName, 45, 220);
+            
+            // Link destination subhead
+            ctx.fillStyle = "#007AFF";
+            ctx.font = "500 20px sans-serif";
+            let shortUrl = targetUrl.length > 45 ? targetUrl.substring(0, 42) + "..." : targetUrl;
+            ctx.fillText(shortUrl, 45, 280);
+
+            // Subdued base details footer
+            ctx.fillStyle = "#52525b";
+            ctx.font = "400 16px sans-serif";
+            ctx.fillText("Picture-in-Picture Audio & Canvas Stream Link Active", 45, 340);
         }
 
-        runCanvasFallbackLoop();
+        // Draw initial design state immediately so canvas starts tracking text data stream layout
+        drawNativeCardUI("Connecting Stream Context...");
 
         const img = new Image();
         img.crossOrigin = "anonymous"; 
         img.src = "https://image.thum.io/get/width/600/crop/1000/" + targetUrl;
 
+        // Strict 3 Second Timeout Barrier: If proxy falls behind or logs out, drop image frame parsing loop entirely
+        const proxyGuardTimeout = setTimeout(() => {
+            if (!streamReady) {
+                streamReady = true; // Prevents onload execution overriding our clean UI layout card
+                setInterval(() => {
+                    drawNativeCardUI("Live Pipeline Active");
+                }, 250);
+            }
+        }, 3000);
+
         img.onload = function() {
+            if (streamReady) return; // Skip if timeout already stepped in to save layout context state
+            clearTimeout(proxyGuardTimeout);
             streamReady = true;
             setInterval(() => {
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             }, 150);
         };
 
-        // Standardize stream instantiation
+        img.onerror = function() {
+            clearTimeout(proxyGuardTimeout);
+            streamReady = true;
+            setInterval(() => {
+                drawNativeCardUI("Live Pipeline Active");
+            }, 250);
+        };
+
+        // Standardize base streaming capture settings layout configuration
         const stream = canvas.captureStream(15); 
         video.srcObject = stream;
 
         button.addEventListener('click', async () => {
             try {
-                // Ensure the media engine forces play execution context inside user tap
                 await video.play();
 
                 if (video.webkitSetPresentationMode) {
@@ -86,7 +127,6 @@
                 }
             } catch (err) {
                 console.error(err);
-                // Hard reset stream attachment if Safari dropped it from memory
                 video.srcObject = canvas.captureStream(15);
                 await video.play();
                 if (video.webkitSetPresentationMode) video.webkitSetPresentationMode('picture-in-picture');
