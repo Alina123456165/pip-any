@@ -29,56 +29,55 @@
         const urlParams = new URLSearchParams(window.location.search);
         let targetUrl = urlParams.get('url');
 
-        // Fallback default if link parameter is missing
         if (!targetUrl) {
             targetUrl = "https://wikipedia.org";
         }
 
-        // Clean link to ensure it's running the mobile layout
         if(targetUrl.includes("en.wikipedia.org") && !targetUrl.includes("en.m.wikipedia.org")) {
             targetUrl = targetUrl.replace("en.wikipedia.org", "en.m.wikipedia.org");
         }
 
-        // Ensure http protocol header is appended correctly
         if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
             targetUrl = 'https://' + targetUrl;
         }
 
         const img = new Image();
         img.crossOrigin = "anonymous"; 
+        
+        // FIX: Added the proper thum.io API route endpoint
+        img.src = "https://image.thum.io/get/" + targetUrl;
 
-        // Universal rendering proxy engine (Immune to Apple cross-origin blocking filters)
-        img.src = "https://thum.io" + targetUrl;
-
+        // Keep canvas drawing working quietly in the background once loaded
         img.onload = function() {
-            // Continuously draw webpage screenshot onto the media stream canvas layout
             setInterval(() => {
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             }, 100);
-
-            const stream = canvas.captureStream(10); 
-            video.srcObject = stream;
-            video.play().catch(e => console.log("Awaiting finger tap interaction"));
         };
 
         button.addEventListener('click', async () => {
             try {
+                // Ensure media stream generation happens explicitly inside the click trigger
+                if (!video.srcObject) {
+                    const stream = canvas.captureStream(10); 
+                    video.srcObject = stream;
+                }
+                
                 await video.play();
+
+                // Native iOS Safari PiP Triggers
                 if (video.webkitSetPresentationMode) {
                     video.webkitSetPresentationMode('picture-in-picture');
-                    button.style.display = 'none';
                 } else if (document.pictureInPictureEnabled) {
                     await video.requestPictureInPicture();
-                    button.style.display = 'none';
                 }
             } catch (err) {
-                alert("Canvas pipeline initializing. Tap once more.");
+                console.error(err);
+                alert("Failed to initialize PiP layout. Try again.");
             }
         });
     </script>
 </body>
 </html>
-
 
 
 
