@@ -1,117 +1,100 @@
-<script>
-    const video = document.getElementById('pipVideo');
-    const button = document.getElementById('pipBtn');
-    const canvas = document.getElementById('renderCanvas');
-    const ctx = canvas.getContext('2d');
-
-    const urlParams = new URLSearchParams(window.location.search);
-    let targetUrl = urlParams.get('url');
-
-    if (!targetUrl) {
-        targetUrl = "https://wikipedia.org";
-    }
-
-    if(targetUrl.includes("en.wikipedia.org") && !targetUrl.includes("en.m.wikipedia.org")) {
-        targetUrl = targetUrl.replace("en.wikipedia.org", "en.m.wikipedia.org");
-    }
-
-    if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
-        targetUrl = 'https://' + targetUrl;
-    }
-
-    let streamInitialized = false;
-
-    // Direct fallback canvas renderer so PiP never hangs
-    function drawFallbackUI(statusMessage) {
-        ctx.fillStyle = "#1e1e24";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Decorative Top Bar
-        ctx.fillStyle = "#2f2f38";
-        ctx.fillRect(0, 0, canvas.width, 80);
-        
-        // Status Text Indicator
-        ctx.fillStyle = "#34c759";
-        ctx.beginPath();
-        ctx.arc(50, 40, 10, 0, 2 * Math.PI);
-        ctx.fill();
-
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 24px sans-serif";
-        ctx.fillText(statusMessage, 80, 48);
-
-        // Main Display Text Panel
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 32px sans-serif";
-        ctx.fillText("Streaming View Link", 50, 200);
-        
-        ctx.fillStyle = "#0a84ff";
-        ctx.font = "20px sans-serif";
-        
-        // Wrap URL string beautifully if it's too long
-        let displayUrl = targetUrl.length > 45 ? targetUrl.substring(0, 42) + "..." : targetUrl;
-        ctx.fillText(displayUrl, 50, 250);
-        
-        ctx.fillStyle = "#8e8e93";
-        ctx.font = "16px sans-serif";
-        ctx.fillText("Picture-in-Picture Pipeline Active", 50, 300);
-    }
-
-    // Default static layout baseline setup
-    drawFallbackUI("Initializing Engine...");
-
-    const img = new Image();
-    img.crossOrigin = "anonymous"; 
-    img.src = "https://image.thum.io/get/width/600/crop/1000/" + targetUrl;
-
-    // Safety Timeout: If thum.io takes longer than 2.5 seconds, activate local engine layout
-    const fallbackTimeout = setTimeout(() => {
-        if (!streamInitialized) {
-            drawFallbackUI("Live Window Link");
-            setupStream();
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
+        #pipBtn { 
+            position: absolute; top: 15px; left: 5%; width: 90%; height: 50px; 
+            background: #007AFF; color: white; border: none; font-size: 16px; 
+            font-weight: bold; border-radius: 12px; z-index: 10; cursor: pointer;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
         }
-    }, 2500);
+        canvas { display: none; }
+        video { position: absolute; bottom: 10px; right: 10px; width: 1px; height: 1px; opacity: 0.01; z-index: 5; }
+    </style>
+</head>
+<body>
 
-    img.onload = function() {
-        clearTimeout(fallbackTimeout);
-        setInterval(() => {
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        }, 200);
-        setupStream();
-    };
+    <button id="pipBtn">⚡️ POP PAGE INTO FLOATING WINDOW ⚡️</button>
+    <canvas id="renderCanvas" width="600" height="1000"></canvas>
+    <video id="pipVideo" playsinline muted loop></video>
 
-    img.onerror = function() {
-        clearTimeout(fallbackTimeout);
-        drawFallbackUI("Live Window Link");
-        setupStream();
-    };
+    <script>
+        const video = document.getElementById('pipVideo');
+        const button = document.getElementById('pipBtn');
+        const canvas = document.getElementById('renderCanvas');
+        const ctx = canvas.getContext('2d');
 
-    function setupStream() {
-        if (!streamInitialized) {
-            const stream = canvas.captureStream(15); 
-            video.srcObject = stream;
-            streamInitialized = true;
+        const urlParams = new URLSearchParams(window.location.search);
+        let targetUrl = urlParams.get('url') || "https://wikipedia.org";
+
+        if(targetUrl.includes("en.wikipedia.org") && !targetUrl.includes("en.m.wikipedia.org")) {
+            targetUrl = targetUrl.replace("en.wikipedia.org", "en.m.wikipedia.org");
         }
-    }
+        if (!targetUrl.startsWith('http')) { targetUrl = 'https://' + targetUrl; }
 
-    button.addEventListener('click', async () => {
-        try {
-            // Make sure pipeline exists before playing
-            setupStream();
-            
-            await video.play();
+        let dots = "";
+        let streamReady = false;
 
-            if (video.webkitSetPresentationMode) {
-                video.webkitSetPresentationMode('picture-in-picture');
-            } else if (document.pictureInPictureEnabled) {
-                await video.requestPictureInPicture();
+        // Permanent fallback UI loop so the stream canvas never displays blank/black
+        function runCanvasFallbackLoop() {
+            setInterval(() => {
+                if (streamReady) return; // Stop drawing text if image manages to overwrite it
+                
+                dots = dots.length >= 3 ? "" : dots + ".";
+                ctx.fillStyle = "#16161a";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 28px sans-serif";
+                ctx.fillText("Generating Floating Window" + dots, 50, 150);
+                
+                ctx.fillStyle = "#007AFF";
+                ctx.font = "20px sans-serif";
+                let cleanDisplay = targetUrl.length > 40 ? targetUrl.substring(0, 37) + "..." : targetUrl;
+                ctx.fillText(cleanDisplay, 50, 210);
+            }, 300);
+        }
+
+        runCanvasFallbackLoop();
+
+        const img = new Image();
+        img.crossOrigin = "anonymous"; 
+        img.src = "https://image.thum.io/get/width/600/crop/1000/" + targetUrl;
+
+        img.onload = function() {
+            streamReady = true;
+            setInterval(() => {
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            }, 150);
+        };
+
+        // Standardize stream instantiation
+        const stream = canvas.captureStream(15); 
+        video.srcObject = stream;
+
+        button.addEventListener('click', async () => {
+            try {
+                // Ensure the media engine forces play execution context inside user tap
+                await video.play();
+
+                if (video.webkitSetPresentationMode) {
+                    video.webkitSetPresentationMode('picture-in-picture');
+                } else if (document.pictureInPictureEnabled) {
+                    await video.requestPictureInPicture();
+                }
+            } catch (err) {
+                console.error(err);
+                // Hard reset stream attachment if Safari dropped it from memory
+                video.srcObject = canvas.captureStream(15);
+                await video.play();
+                if (video.webkitSetPresentationMode) video.webkitSetPresentationMode('picture-in-picture');
             }
-        } catch (err) {
-            console.error("PiP Engine Exception: ", err);
-            alert("Tap once more to cycle canvas pipeline.");
-        }
-    });
-</script>
+        });
+    </script>
+</body>
+</html>
 
 
 
