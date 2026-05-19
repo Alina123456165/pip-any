@@ -11,7 +11,6 @@
             box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
         }
         #pipBtn:active { background: #0056b3; }
-        /* FIX: Canvas is no longer display:none. It is now visible but squished to 1px to bypass iOS background freezing policies */
         canvas { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0.01; z-index: 1; }
         video { position: absolute; bottom: 10px; right: 10px; width: 1px; height: 1px; opacity: 0.01; z-index: 5; }
     </style>
@@ -100,7 +99,6 @@
             ctx.fillText(`CONTEXT STATUS: ENGINE PIP LAYER ACTIVE`, 45 + trackJitterX, 410 + trackJitterY);
         }
 
-        // Lock rendering interval loop
         setInterval(updateCanvasFrames, 16);
 
         let streamCaptureThread = canvas.captureStream(60);
@@ -110,7 +108,6 @@
             try {
                 streamCaptureThread = canvas.captureStream(60);
                 video.srcObject = streamCaptureThread;
-                
                 await video.play();
 
                 if (video.webkitSetPresentationMode) {
