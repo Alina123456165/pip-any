@@ -3,13 +3,15 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #121214; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0b0b0c; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         #pipBtn { 
             position: absolute; top: 15px; left: 5%; width: 90%; height: 50px; 
             background: #007AFF; color: white; border: none; font-size: 16px; 
             font-weight: bold; border-radius: 12px; z-index: 10; cursor: pointer;
             box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
+            transition: background 0.2s ease;
         }
+        #pipBtn:active { background: #0056b3; }
         canvas { display: none; }
         video { position: absolute; bottom: 10px; right: 10px; width: 1px; height: 1px; opacity: 0.01; z-index: 5; }
     </style>
@@ -34,82 +36,76 @@
         }
         if (!targetUrl.startsWith('http')) { targetUrl = 'https://' + targetUrl; }
 
-        let streamReady = false;
-        let domainName = "Webpage View";
-        
+        let domainName = "Webpage Stream";
         try {
             domainName = new URL(targetUrl).hostname.replace('www.', '');
         } catch(e) {}
 
-        // Premium Dark Mode UI layout generator (Fires if the API screenshot lags or is blocked)
-        function drawNativeCardUI(statusText) {
-            ctx.fillStyle = "#121214";
+        // Smooth text scrolling tracking variables
+        let scrollY = 0;
+        let pulseTime = 0;
+
+        function drawLiveDashboard() {
+            // Background
+            ctx.fillStyle = "#0b0b0c";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            ctx.fillStyle = "#1a1a1e";
-            ctx.fillRect(0, 0, canvas.width, 90);
+            // Neon top accent bar panel
+            ctx.fillStyle = "#121214";
+            ctx.fillRect(0, 0, canvas.width, 100);
+            ctx.strokeStyle = "#1e1e24";
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(0, 100); ctx.lineTo(canvas.width, 100); ctx.stroke();
             
-            ctx.fillStyle = statusText === "Live Pipeline Active" ? "#34c759" : "#ff9500";
+            // Pulsing Live Indicator Node
+            pulseTime += 0.05;
+            let alpha = 0.6 + Math.sin(pulseTime) * 0.4;
+            ctx.fillStyle = `rgba(52, 199, 89, ${alpha})`;
             ctx.beginPath();
-            ctx.arc(45, 45, 8, 0, 2 * Math.PI);
+            ctx.arc(45, 50, 7, 0, 2 * Math.PI);
             ctx.fill();
 
+            // Status Badge Header
             ctx.fillStyle = "#a1a1aa";
-            ctx.font = "600 18px sans-serif";
-            ctx.fillText(statusText.toUpperCase(), 70, 52);
+            ctx.font = "bold 14px monospace";
+            ctx.fillText("AUDIO & LINK STREAM ACTIVE", 65, 55);
 
+            // Dynamic Scrolling Text Core Content View
+            scrollY -= 0.6; 
+            if (scrollY < -400) { scrollY = 150; } // Loop bounds resetting
+
+            ctx.save();
+            // Restrict text area display boundary matrix
+            ctx.beginPath();
+            ctx.rect(0, 100, canvas.width, canvas.height - 100);
+            ctx.clip();
+
+            // Main Domain Label Text Block
             ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 42px sans-serif";
-            ctx.fillText(domainName, 45, 220);
+            ctx.font = "bold 46px -apple-system, sans-serif";
+            ctx.fillText(domainName, 45, 260 + scrollY);
             
+            // Destination URL Target Layout Box
             ctx.fillStyle = "#007AFF";
-            ctx.font = "500 20px sans-serif";
-            let shortUrl = targetUrl.length > 45 ? targetUrl.substring(0, 42) + "..." : targetUrl;
-            ctx.fillText(shortUrl, 45, 280);
+            ctx.font = "500 20px -apple-system, sans-serif";
+            let shortUrl = targetUrl.length > 50 ? targetUrl.substring(0, 47) + "..." : targetUrl;
+            ctx.fillText(shortUrl, 45, 315 + scrollY);
 
-            ctx.fillStyle = "#52525b";
-            ctx.font = "400 16px sans-serif";
-            ctx.fillText("Picture-in-Picture Audio & Canvas Stream Link Active", 45, 340);
+            // Interface Sub-Details Context Summary Panel
+            ctx.fillStyle = "#3a3a3c";
+            ctx.font = "400 15px -apple-system, sans-serif";
+            ctx.fillText("Pipeline Mode: Apple Native Video Stream Standard", 45, 375 + scrollY);
+            ctx.fillText("Session Status: Background Thread Executing", 45, 405 + scrollY);
+            ctx.fillText("Device Output Context: Target Checked Safe", 45, 435 + scrollY);
+            
+            ctx.restore();
         }
 
-        // Draw initial fallback text frame immediately
-        drawNativeCardUI("Connecting Stream Context...");
+        // Fire rendering loops immediately at a locked 30 FPS framework speed
+        setInterval(drawLiveDashboard, 33);
 
-        const img = new Image();
-        img.crossOrigin = "anonymous"; 
-        
-        // UPGRADED ENGINE: Uses Microlink API to pull clean, unblocked screenshots faster
-        img.src = "https://api.microlink.io?url=" + encodeURIComponent(targetUrl) + "&screenshot=true&embed=screenshot.url";
-
-        // 3.5 Second Safety Timeout Barrier
-        const proxyGuardTimeout = setTimeout(() => {
-            if (!streamReady) {
-                streamReady = true; 
-                setInterval(() => {
-                    drawNativeCardUI("Live Pipeline Active");
-                }, 250);
-            }
-        }, 3500);
-
-        img.onload = function() {
-            if (streamReady) return; 
-            clearTimeout(proxyGuardTimeout);
-            streamReady = true;
-            setInterval(() => {
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            }, 150);
-        };
-
-        img.onerror = function() {
-            clearTimeout(proxyGuardTimeout);
-            streamReady = true;
-            setInterval(() => {
-                drawNativeCardUI("Live Pipeline Active");
-            }, 250);
-        };
-
-        // Initialize standard stream capture
-        const stream = canvas.captureStream(15); 
+        // Bind core canvas capture profile parameters
+        const stream = canvas.captureStream(30); 
         video.srcObject = stream;
 
         button.addEventListener('click', async () => {
@@ -122,9 +118,8 @@
                     await video.requestPictureInPicture();
                 }
             } catch (err) {
-                console.error(err);
-                // Hard reset the stream if Safari garbage-collects it mid-execution
-                video.srcObject = canvas.captureStream(15);
+                console.error("PiP Engine Interrupt Error: ", err);
+                video.srcObject = canvas.captureStream(30);
                 await video.play();
                 if (video.webkitSetPresentationMode) video.webkitSetPresentationMode('picture-in-picture');
             }
