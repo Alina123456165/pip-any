@@ -27,36 +27,38 @@
         const ctx = canvas.getContext('2d');
 
         const urlParams = new URLSearchParams(window.location.search);
-        let targetUrl = urlParams.get('url') || "https://wikipedia.org";
+        let targetUrl = urlParams.get('url');
 
-        // If it's a desktop Wikipedia link, automatically swap it to mobile layout
+        // Fallback default if link parameter is missing
+        if (!targetUrl) {
+            targetUrl = "https://wikipedia.org";
+        }
+
+        // Clean link to ensure it's running the mobile layout
         if(targetUrl.includes("en.wikipedia.org") && !targetUrl.includes("en.m.wikipedia.org")) {
             targetUrl = targetUrl.replace("en.wikipedia.org", "en.m.wikipedia.org");
         }
 
-        const img = new Image();
-        img.crossOrigin = "anonymous"; // Bypass canvas extraction rules
+        // Ensure http protocol header is appended correctly
+        if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+            targetUrl = 'https://' + targetUrl;
+        }
 
-        // Secure, automated proxy server renders the layout instantly into an image
-        img.src = "https://microlink.io" + encodeURIComponent(targetUrl) + "&screenshot=true&embed=screenshot.url";
+        const img = new Image();
+        img.crossOrigin = "anonymous"; 
+
+        // Universal rendering proxy engine (Immune to Apple cross-origin blocking filters)
+        img.src = "https://thum.io" + targetUrl;
 
         img.onload = function() {
+            // Continuously draw webpage screenshot onto the media stream canvas layout
             setInterval(() => {
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             }, 100);
 
             const stream = canvas.captureStream(10); 
             video.srcObject = stream;
-            video.play().catch(e => console.log("Awaiting interaction"));
-        };
-
-        img.onerror = function() {
-            // Draw a quick manual fallback warning box if the website rejects proxy rendering
-            ctx.fillStyle = "#222";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#fff";
-            ctx.font = "20px Arial";
-            ctx.fillText("Webpage layout pending image render loop...", 40, 100);
+            video.play().catch(e => console.log("Awaiting finger tap interaction"));
         };
 
         button.addEventListener('click', async () => {
@@ -65,9 +67,12 @@
                 if (video.webkitSetPresentationMode) {
                     video.webkitSetPresentationMode('picture-in-picture');
                     button.style.display = 'none';
+                } else if (document.pictureInPictureEnabled) {
+                    await video.requestPictureInPicture();
+                    button.style.display = 'none';
                 }
             } catch (err) {
-                alert("Tap once more to engage hardware canvas loop.");
+                alert("Canvas pipeline initializing. Tap once more.");
             }
         });
     </script>
