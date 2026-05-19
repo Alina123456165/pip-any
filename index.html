@@ -26,34 +26,26 @@
         const canvas = document.getElementById('renderCanvas');
         const ctx = canvas.getContext('2d');
 
-        // This checks for the clean imgLink parameter coming from your shortcut
-        const urlParams = new URLSearchParams(window.location.search);
-        let imgLink = urlParams.get('imgLink');
-
         const img = new Image();
-        img.crossOrigin = "anonymous"; // Essential step: unblocks iOS canvas rules
-
-        if (imgLink) {
-            img.src = imgLink;
-        } else {
-            // Default text if you open the link manually without the shortcut
-            ctx.fillStyle = "#222";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#fff";
-            ctx.font = "24px Arial";
-            ctx.fillText("Launch this using your custom Share Sheet tool!", 40, 100);
-        }
+        img.crossOrigin = "anonymous"; 
+        
+        // Target your local files directory sandbox route
+        img.src = "shareddocuments://Shortcuts/pip-view.jpg";
 
         img.onload = function() {
-            // Constantly render the image to canvas to satisfy iOS video streams
             setInterval(() => {
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             }, 100);
 
             const stream = canvas.captureStream(10); 
             video.srcObject = stream;
-            video.play().catch(e => console.log("Awaiting finger tap interaction"));
+            video.play().catch(e => console.log("Awaiting finger tap"));
         };
+
+        // Fallback option if local filesystem route is blocked by Safari browser context
+        img.onerror = function() {
+            img.src = "apple-shortcuts://run-shortcut?name=Run%20Script%201";
+        }
 
         button.addEventListener('click', async () => {
             try {
@@ -69,6 +61,7 @@
     </script>
 </body>
 </html>
+
 
 
 
