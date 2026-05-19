@@ -21,6 +21,8 @@
         
         #statusText { color: #8e8e93; font-size: 12px; margin-top: 5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
 
+        /* Hidden image element used to safely download the screenshot background data */
+        #hiddenImg { display: none; }
         canvas { position: absolute; top: 110px; left: 5%; width: 90%; height: auto; border-radius: 8px; background: #111116; display: block; }
         video { position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; opacity: 0.01; }
     </style>
@@ -32,6 +34,7 @@
         <div id="statusText">Initializing image pipeline...</div>
     </div>
     
+    <img id="hiddenImg" />
     <canvas id="streamCanvas" width="800" height="1200"></canvas>
     <video id="pipMediaTrack" playsinline muted loop></video>
 
@@ -40,40 +43,52 @@
         const button = document.getElementById('pipBtn');
         const canvas = document.getElementById('streamCanvas');
         const status = document.getElementById('statusText');
+        const img = document.getElementById('hiddenImg');
         const ctx = canvas.getContext('2d');
 
         const urlParams = new URLSearchParams(window.location.search);
         let targetUrl = urlParams.get('url') || "https://en.m.wikipedia.org/wiki/Candy_bar";
         if (!targetUrl.startsWith('http')) { targetUrl = 'https://' + targetUrl; }
 
-        // Core dynamic video looping variables
-        let imageLoaded = false;
-        let tick = 0;
-        const webImage = new Image();
-
-        // Render early boot loading panel text layouts onto canvas frame buffer
+        // Draw initial placeholder directly onto canvas so it isn't empty
         ctx.fillStyle = "#111116";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#ffffff";
         ctx.font = "bold 32px -apple-system, sans-serif";
-        ctx.fillText("Processing live screenshot frame payload...", 60, 160);
+        ctx.fillText("Loading webpage screenshot...", 60, 160);
 
-        // Standard Microlink target mapping string parameters
         const screenshotUrl = `https://api.microlink.io/?url=${encodeURIComponent(targetUrl)}&screenshot=true&embed=screenshot.url`;
         
-        webImage.crossOrigin = "anonymous"; 
-        webImage.src = screenshotUrl;
+        img.crossOrigin = "anonymous";
+        img.src = screenshotUrl;
 
-        webImage.onload = function() {
-            imageLoaded = true;
+        let engineActive = false;
+        let tick = 0;
+
+        img.onload = function() {
+            // Step 1: Push image onto canvas immediately upon successful load
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+            // Step 2: Safe bind the streaming tracks ONLY after the pixels exist
+            video.srcObject = canvas.captureStream(30);
+            engineActive = true;
+
+            // Step 3: Unlock button
             button.disabled = false;
             button.innerText = "⚡️ POP PAGE INTO FLOATING WINDOW ⚡️";
-            status.innerText = "Connection active. Ready to float view.";
+            status.innerText = "Ready! Tap to enter Picture-in-Picture.";
         };
 
-        webImage.onerror = function() {
+        img.onerror = function() {
             ctx.fillStyle = "#ff453a";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "#ffffff";
             ctx.font = "30px sans-serif";
-            ctx
+            ctx.fillText("Failed to capture website image preview.", 60, 150);
+            status.innerText = "Error loading image resource.";
+        };
+
+        // Continuous refresh loop to satisfy iOS stream activity detection
+        setInterval(()
