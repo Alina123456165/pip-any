@@ -4,25 +4,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
-        
         #pipBtn { 
             position: absolute; top: 15px; left: 5%; width: 90%; height: 50px; 
             background: #007AFF; color: white; border: none; font-size: 16px; 
             font-weight: bold; border-radius: 12px; z-index: 10; cursor: pointer;
             box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
         }
-        /* Hidden layout canvas generating the frame data loop */
         canvas { display: none; }
         video { position: absolute; bottom: 10px; right: 10px; width: 1px; height: 1px; opacity: 0.01; z-index: 5; }
-        #previewText { position: absolute; top: 80px; width: 100%; text-align: center; color: #888; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <button id="pipBtn">⚡️ POP PAGE INTO FLOATING WINDOW ⚡️</button>
-    <div id="previewText">Fetching web layer data snapshot...</div>
 
-    <canvas id="renderCanvas" width="600" height="800"></canvas>
+    <canvas id="renderCanvas" width="600" height="1000"></canvas>
     <video id="pipVideo" playsinline muted loop></video>
 
     <script>
@@ -30,67 +26,55 @@
         const button = document.getElementById('pipBtn');
         const canvas = document.getElementById('renderCanvas');
         const ctx = canvas.getContext('2d');
-        const previewText = document.getElementById('previewText');
 
+        // Grab the raw image data passed directly from your iPhone Shortcut
         const urlParams = new URLSearchParams(window.location.search);
-        let targetUrl = urlParams.get('url') || "https://wikipedia.org";
-        
-        if(targetUrl.includes("en.wikipedia.org")) {
-            targetUrl = targetUrl.replace("en.wikipedia.org", "en.m.wikipedia.org");
-        }
+        let base64Image = urlParams.get('img');
 
-        // Use a secure, open-source proxy to render the webpage visual data matrix
         const img = new Image();
-        img.crossOrigin = "anonymous"; 
         
-        // This generates a static thumbnail view of the layout canvas securely
-        img.src = `https://thum.io{targetUrl}`;
-
-        img.onload = function() {
-            previewText.innerHTML = "Web view ready. Click the button above!";
-            startLiveRender();
-        };
-
-        img.onerror = function() {
-            previewText.innerHTML = "Error rendering target link layout.";
-            // Draw a fallback canvas block if tracking filters interfere
+        if (base64Image) {
+            // Rebuild the image from the shortcut data
+            img.src = "data:image/jpeg;base64," + base64Image.replace(/ /g, "+");
+        } else {
+            // Default placeholder if opened without shortcut
             ctx.fillStyle = "#222";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "#fff";
-            ctx.font = "20px Arial";
-            ctx.fillText("Could not stream website canvas content safely.", 50, 100);
-        };
+            ctx.font = "24px Arial";
+            ctx.fillText("Open this via your Share Sheet Shortcut!", 50, 100);
+        }
 
-        function startLiveRender() {
-            // Constantly render the site photo onto the canvas memory layer
+        img.onload = function() {
+            // Keep drawing the image to keep the video stream active
             setInterval(() => {
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             }, 100);
 
-            // Turn that picture canvas array into an active video feed for Apple WebKit
+            // Feed the canvas into the video layout
             const stream = canvas.captureStream(10); 
             video.srcObject = stream;
-            video.play();
-        }
+            video.play().catch(e => console.log("Waiting for tap"));
+        };
 
         button.addEventListener('click', async () => {
             try {
+                await video.play();
                 if (video.webkitSetPresentationMode) {
                     video.webkitSetPresentationMode('picture-in-picture');
                     button.style.display = 'none';
-                    previewText.style.display = 'none';
                 } else if (document.pictureInPictureEnabled) {
                     await video.requestPictureInPicture();
                     button.style.display = 'none';
-                    previewText.style.display = 'none';
                 }
             } catch (err) {
-                alert("Please wait a moment for the canvas image buffer to settle.");
+                alert("Tap once more to engage hardware.");
             }
         });
     </script>
 </body>
 </html>
+
 
 
 
