@@ -26,21 +26,16 @@
         const canvas = document.getElementById('renderCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Bypasses iOS URL stripping by extracting the webpage string directly from the folder path name
-        let pathName = window.location.pathname.split('/').pop();
-        let targetUrl = "https://wikipedia.org";
+        // Cleanly reads the query parameter safely passed via URL Encode
+        const urlParams = new URLSearchParams(window.location.search);
+        let targetUrl = urlParams.get('url');
 
-        if (pathName && pathName !== "pip-any" && pathName !== "404.html") {
-            try {
-                // Restore any converted underscore characters back to forward slashes before decoding
-                let safeBase64 = pathName.replace(/_/g, '/');
-                targetUrl = atob(safeBase64);
-            } catch(e) {
-                console.log("Error decoding path string, using default fallback.");
-            }
+        // Fallback default if link parameter is missing
+        if (!targetUrl) {
+            targetUrl = "https://wikipedia.org";
         }
 
-        // Clean link to ensure it's running the mobile layout
+        // Ensure the link layout targets the mobile framework version
         if(targetUrl.includes("en.wikipedia.org") && !targetUrl.includes("en.m.wikipedia.org")) {
             targetUrl = targetUrl.replace("en.wikipedia.org", "en.m.wikipedia.org");
         }
@@ -84,4 +79,5 @@
     </script>
 </body>
 </html>
+
 
