@@ -4,15 +4,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; font-family: -apple-system, sans-serif; overflow: hidden; }
-        #controlHeader { position: fixed; top: 0; width: 100%; height: 100px; background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; }
-        #pipBtn { width: 90%; height: 50px; background: #007AFF; color: white; border-radius: 10px; border: none; font-weight: bold; }
-        canvas { position: absolute; top: 120px; left: 5%; width: 90%; height: auto; }
+        #controlHeader { position: fixed; top: 0; width: 100%; height: 120px; background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; }
+        #pipBtn { width: 90%; height: 60px; background: #007AFF; color: white; border-radius: 12px; border: none; font-weight: bold; font-size: 16px; }
+        #status { color: #8e8e93; font-size: 11px; margin-top: 10px; }
+        canvas { position: absolute; top: 140px; left: 5%; width: 90%; height: auto; }
         video { display: none; }
     </style>
 </head>
 <body>
     <div id="controlHeader">
-        <button id="pipBtn">⚡️ LAUNCH IMAGE FROM CLIPBOARD</button>
+        <button id="pipBtn">⚡️ LAUNCH FROM CLIPBOARD</button>
+        <div id="status">Ready. Copy shortcut data, then tap here.</div>
     </div>
     <canvas id="streamCanvas" width="500" height="800"></canvas>
     <video id="pipMediaTrack" playsinline muted loop src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA=="></video>
@@ -21,19 +23,34 @@
         const video = document.getElementById('pipMediaTrack');
         const canvas = document.getElementById('streamCanvas');
         const ctx = canvas.getContext('2d');
+        const btn = document.getElementById('pipBtn');
+        const status = document.getElementById('status');
 
-        document.getElementById('pipBtn').onclick = async () => {
-            // Fetch the image data directly from your device's clipboard
-            const text = await navigator.clipboard.readText();
-            const img = new Image();
-            img.src = 'data:image/png;base64,' + text;
+        btn.onclick = async () => {
+            try {
+                status.innerText = "Requesting clipboard permission...";
+                // Force a short pause to ensure the user gesture propagates to the browser API
+                await new Promise(r => setTimeout(r, 200));
+                const text = await navigator.clipboard.readText();
+                
+                status.innerText = "Parsing image data...";
+                const img = new Image();
+                img.src = 'data:image/png;base64,' + text;
 
-            img.onload = () => {
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                video.srcObject = canvas.captureStream(30);
-                video.play();
-                video.webkitSetPresentationMode('picture-in-picture');
-            };
+                img.onload = () => {
+                    ctx.fillStyle = "#000";
+                    ctx.fillRect(0,0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    video.srcObject = canvas.captureStream(30);
+                    video.play();
+                    video.webkitSetPresentationMode('picture-in-picture');
+                    status.innerText = "Success! PiP active.";
+                };
+            } catch (err) {
+                status.innerText = "Error: Permission denied or clipboard empty.";
+                console.error(err);
+            }
         };
     </script>
 </body>
