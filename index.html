@@ -17,85 +17,73 @@
             font-weight: bold; border-radius: 10px; cursor: pointer;
             box-shadow: 0px 4px 15px rgba(0,122,255,0.3);
         }
+        #pipBtn:disabled { background: #3a3a3c; color: #8e8e93; cursor: not-allowed; }
         
         #statusText { color: #8e8e93; font-size: 12px; margin-top: 5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* The canvas sizing acts as the video aspect ratio container */
+        #hiddenImg { display: none; }
         canvas { position: absolute; top: 110px; left: 5%; width: 90%; height: auto; border-radius: 8px; background: #111116; display: block; }
-        video { position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; opacity: 0.01; }
+        
+        /* Keep video fully visible at 1px size to bypass iOS 18.5 background thread throttling */
+        video { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0.01; z-index: 99999; pointer-events: none; }
     </style>
 </head>
 <body>
 
     <div id="controlHeader">
-        <button id="pipBtn">⚡️ POP PAGE INTO FLOATING WINDOW ⚡️</button>
-        <div id="statusText">NATIVE PIPELINE READY</div>
+        <button id="pipBtn" disabled>⏳ CAPTURING VISUAL WEB VIEW...</button>
+        <div id="statusText">Initializing image pipeline...</div>
     </div>
     
+    <img id="hiddenImg" />
     <canvas id="streamCanvas" width="800" height="1200"></canvas>
-    <video id="pipMediaTrack" playsinline muted loop></video>
+    
+    <video id="pipMediaTrack" playsinline muted loop src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA=="></video>
 
     <script>
         const video = document.getElementById('pipMediaTrack');
         const button = document.getElementById('pipBtn');
         const canvas = document.getElementById('streamCanvas');
         const status = document.getElementById('statusText');
+        const img = document.getElementById('hiddenImg');
         const ctx = canvas.getContext('2d');
 
         const urlParams = new URLSearchParams(window.location.search);
         let targetUrl = urlParams.get('url') || "https://en.m.wikipedia.org/wiki/Candy_bar";
         if (!targetUrl.startsWith('http')) { targetUrl = 'https://' + targetUrl; }
 
-        let domainLabel = "Web Context Stream";
-        try { domainLabel = new URL(targetUrl).hostname.replace('www.', ''); } catch(e) {}
+        ctx.fillStyle = "#111116";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 32px -apple-system, sans-serif";
+        ctx.fillText("Processing webpage screenshot...", 60, 160);
 
-        let tick = 0;
+        // Using the ultra-stable s-shot capture mirror
+        const screenshotUrl = `https://mini.s-shot.ru/1024x768/800/jpeg/?${encodeURIComponent(targetUrl)}`;
+        
+        img.crossOrigin = "anonymous";
+        img.src = screenshotUrl;
 
-        // Render clean structural cards natively on canvas to stay 100% independent of server uptimes
-        function drawNativeReaderLayout() {
-            // Dark Obsidian Canvas Base
-            ctx.fillStyle = "#09090d";
+        let engineActive = false;
+        let toggle = 0;
+
+        img.onload = function() {
+            ctx.fillStyle = "#000000";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Left Sidebar Trim accent bar
-            ctx.fillStyle = "#007AFF";
-            ctx.fillRect(0, 0, 10, canvas.height);
-
-            // Clean, High-Contrast Typography Layout Block
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 44px -apple-system, BlinkMacSystemFont, sans-serif";
-            ctx.fillText(domainLabel, 50, 100);
-
-            ctx.fillStyle = "#0A84FF";
-            ctx.font = "20px monospace";
-            let shortUrl = targetUrl.length > 55 ? targetUrl.substring(0, 52) + "..." : targetUrl;
-            ctx.fillText(shortUrl, 50, 150);
-
-            // Separator Rule Line
-            ctx.strokeStyle = "#1c1c24";
-            ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(50, 200); ctx.lineTo(750, 200); ctx.stroke();
-
-            // Native Content Status Dashboard
-            ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
-            ctx.fillRect(50, 240, 700, 800);
-            ctx.strokeStyle = "rgba(255,255,255,0.05)";
-            ctx.strokeRect(50, 240, 700, 800);
-
-            ctx.fillStyle = "#aeaeb2";
-            ctx.font = "bold 18px monospace";
-            ctx.fillText("> STREAM CONTEXT INITIALIZED SUCCESSFULLY", 90, 300);
-            ctx.fillText("> SECURITY LEVEL: SECURE LOCAL BROWSER ISOLATION", 90, 340);
-            ctx.fillText("> ENGINE SPEED: 60FPS HARDWARE SYNCED", 90, 380);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "24px -apple-system, sans-serif";
-            ctx.fillText("This card routes your link info seamlessly.", 90, 460);
-            ctx.fillText("Swipe up to overlay this tab across iOS.", 90, 500);
+            // Bind the active canvas capture stream to the video asset node
+            video.srcObject = canvas.captureStream(30);
+            engineActive = true;
 
-            // Pulsing Neon Status Dot
-            let pulse = 0.5 + Math.sin(tick * 0.1) * 0.5;
-            ctx.fillStyle = `rgba(52, 199, 89, ${pulse})`;
-            ctx.beginPath(); ctx.arc(90, 950, 10, 0, Math.PI * 2); ctx.fill();
+            button.disabled = false;
+            button.innerText = "⚡️ POP PAGE INTO FLOATING WINDOW ⚡️";
+            status.innerText = "Pipeline hot. Click to launch.";
+        };
 
-            ctx.fillStyle = "#34
+        img.onerror = function() {
+            // Instant fallback re-route to Microlink if s-shot API bottlenecks
+            img.src = `https://api.microlink.io/?url=${encodeURIComponent(targetUrl)}&screenshot=true&embed=screenshot.url`;
+        };
+
+        //
