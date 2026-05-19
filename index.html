@@ -41,62 +41,58 @@
             domainName = new URL(targetUrl).hostname.replace('www.', '');
         } catch(e) {}
 
-        // Premium Dark Mode UI layout generator
+        // Premium Dark Mode UI layout generator (Fires if the API screenshot lags or is blocked)
         function drawNativeCardUI(statusText) {
             ctx.fillStyle = "#121214";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Subtle top container
             ctx.fillStyle = "#1a1a1e";
             ctx.fillRect(0, 0, canvas.width, 90);
             
-            // Status dot Indicator
             ctx.fillStyle = statusText === "Live Pipeline Active" ? "#34c759" : "#ff9500";
             ctx.beginPath();
             ctx.arc(45, 45, 8, 0, 2 * Math.PI);
             ctx.fill();
 
-            // Status string header text text layout
             ctx.fillStyle = "#a1a1aa";
             ctx.font = "600 18px sans-serif";
             ctx.fillText(statusText.toUpperCase(), 70, 52);
 
-            // Large clean domain text banner block
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 42px sans-serif";
             ctx.fillText(domainName, 45, 220);
             
-            // Link destination subhead
             ctx.fillStyle = "#007AFF";
             ctx.font = "500 20px sans-serif";
             let shortUrl = targetUrl.length > 45 ? targetUrl.substring(0, 42) + "..." : targetUrl;
             ctx.fillText(shortUrl, 45, 280);
 
-            // Subdued base details footer
             ctx.fillStyle = "#52525b";
             ctx.font = "400 16px sans-serif";
             ctx.fillText("Picture-in-Picture Audio & Canvas Stream Link Active", 45, 340);
         }
 
-        // Draw initial design state immediately so canvas starts tracking text data stream layout
+        // Draw initial fallback text frame immediately
         drawNativeCardUI("Connecting Stream Context...");
 
         const img = new Image();
         img.crossOrigin = "anonymous"; 
-        img.src = "https://image.thum.io/get/width/600/crop/1000/" + targetUrl;
+        
+        // UPGRADED ENGINE: Uses Microlink API to pull clean, unblocked screenshots faster
+        img.src = "https://api.microlink.io?url=" + encodeURIComponent(targetUrl) + "&screenshot=true&embed=screenshot.url";
 
-        // Strict 3 Second Timeout Barrier: If proxy falls behind or logs out, drop image frame parsing loop entirely
+        // 3.5 Second Safety Timeout Barrier
         const proxyGuardTimeout = setTimeout(() => {
             if (!streamReady) {
-                streamReady = true; // Prevents onload execution overriding our clean UI layout card
+                streamReady = true; 
                 setInterval(() => {
                     drawNativeCardUI("Live Pipeline Active");
                 }, 250);
             }
-        }, 3000);
+        }, 3500);
 
         img.onload = function() {
-            if (streamReady) return; // Skip if timeout already stepped in to save layout context state
+            if (streamReady) return; 
             clearTimeout(proxyGuardTimeout);
             streamReady = true;
             setInterval(() => {
@@ -112,7 +108,7 @@
             }, 250);
         };
 
-        // Standardize base streaming capture settings layout configuration
+        // Initialize standard stream capture
         const stream = canvas.captureStream(15); 
         video.srcObject = stream;
 
@@ -127,6 +123,7 @@
                 }
             } catch (err) {
                 console.error(err);
+                // Hard reset the stream if Safari garbage-collects it mid-execution
                 video.srcObject = canvas.captureStream(15);
                 await video.play();
                 if (video.webkitSetPresentationMode) video.webkitSetPresentationMode('picture-in-picture');
