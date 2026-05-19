@@ -3,112 +3,87 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000000; font-family: -apple-system, BlinkMacSystemFont, sans-serif; overflow-x: hidden; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000000; font-family: -apple-system, sans-serif; overflow: hidden; }
         
-        /* Persistent Top Control Header */
         #controlHeader {
-            position: fixed; top: 0; left: 0; width: 100%; height: 85px;
-            background: rgba(10, 10, 12, 0.95); backdrop-filter: blur(10px);
-            display: flex; align-items: center; justify-content: center;
-            box-sizing: border-box; padding: 10px 20px; z-index: 9999;
-            border-bottom: 1px solid #1c1c24;
+            position: fixed; top: 0; left: 0; width: 100%; height: 90px;
+            background: #111116; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 9999; border-bottom: 1px solid #22222a; box-sizing: border-box; padding: 10px;
         }
 
         #pipBtn { 
-            width: 100%; max-width: 500px; height: 50px; 
+            width: 90%; max-width: 400px; height: 45px; 
             background: #007AFF; color: white; border: none; font-size: 15px; 
-            font-weight: bold; border-radius: 12px; cursor: pointer;
-            box-shadow: 0px 4px 15px rgba(0,122,255,0.3);
+            font-weight: bold; border-radius: 10px; cursor: pointer;
         }
-        #pipBtn:active { background: #0056b3; }
+        #pipBtn:disabled { background: #3a3a3c; color: #8e8e93; cursor: not-allowed; }
         
-        /* The Actual Visual Web View Panel */
-        #contentWrapper {
-            margin-top: 95px; width: 100%; padding: 15px; box-sizing: border-box;
-        }
-        iframe { width: 100%; height: calc(100vh - 120px); border: none; border-radius: 12px; background: #ffffff; }
-        
-        /* Internal Engine Elements Hidden Out of View */
-        canvas { position: absolute; top: -9999px; left: -9999px; width: 480px; height: 270px; }
+        #statusText { color: #8e8e93; font-size: 12px; margin-top: 5px; font-weight: 500; }
+
+        /* The canvas sizing acts as the video aspect ratio container */
+        canvas { position: absolute; top: 100px; left: 5%; width: 90%; height: auto; border-radius: 8px; background: #111; display: block; }
         video { position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; opacity: 0.01; }
     </style>
 </head>
 <body>
 
     <div id="controlHeader">
-        <button id="pipBtn">⚡️ POP LIVE PAGE INTO FLOATING WINDOW ⚡️</button>
+        <button id="pipBtn" disabled>⏳ CAPTURING WEBPAGE IMAGE...</button>
+        <div id="statusText">Initializing image pipeline...</div>
     </div>
     
-    <div id="contentWrapper">
-        <iframe id="targetFrame"></iframe>
-    </div>
-    
-    <canvas id="streamCanvas" width="480" height="270"></canvas>
+    <canvas id="streamCanvas" width="800" height="1000"></canvas>
     <video id="pipMediaTrack" playsinline muted loop></video>
 
     <script>
         const video = document.getElementById('pipMediaTrack');
         const button = document.getElementById('pipBtn');
         const canvas = document.getElementById('streamCanvas');
-        const frame = document.getElementById('targetFrame');
+        const status = document.getElementById('statusText');
         const ctx = canvas.getContext('2d');
 
         const urlParams = new URLSearchParams(window.location.search);
-        let targetUrl = urlParams.get('url') || "https://en.m.wikipedia.org";
-
-        if(targetUrl.includes("en.wikipedia.org") && !targetUrl.includes("en.m.wikipedia.org")) {
-            targetUrl = targetUrl.replace("en.wikipedia.org", "en.m.wikipedia.org");
-        }
+        let targetUrl = urlParams.get('url') || "https://en.m.wikipedia.org/wiki/Candy_bar";
         if (!targetUrl.startsWith('http')) { targetUrl = 'https://' + targetUrl; }
 
-        frame.src = targetUrl;
+        // Set up initial holding frame
+        ctx.fillStyle = "#111116";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "30px sans-serif";
+        ctx.fillText("Fetching visual webpage content...", 50, 100);
 
-        let hostString = "Webpage View";
-        try { hostString = new URL(targetUrl).hostname; } catch(e) {}
+        // Fetch screenshot via cross-origin friendly public rendering API
+        const screenshotUrl = `https://cc-api.com/v1/screenshot?url=${encodeURIComponent(targetUrl)}&width=800&height=1000&viewportWidth=400&viewportHeight=500`;
+        
+        const webImage = new Image();
+        webImage.crossOrigin = "anonymous"; // Bypass Safari CORS defense blocks
+        webImage.src = screenshotUrl;
 
-        // Generates an unblockable ultra-clear text blueprint display inside the video channel
-        function processVideoMatrix() {
-            ctx.fillStyle = "#0d0d11";
+        webImage.onload = function() {
+            // Webpage screenshot loaded successfully. Draw it to canvas.
+            ctx.drawImage(webImage, 0, 0, canvas.width, canvas.height);
+            
+            button.disabled = false;
+            button.innerText = "⚡️ POP PAGE INTO FLOATING WINDOW ⚡️";
+            status.innerText = "Ready! Tap the blue button to float the window.";
+        };
+
+        webImage.onerror = function() {
+            ctx.fillStyle = "#ff453a";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Left Status Accents
-            ctx.fillStyle = "#007AFF";
-            ctx.fillRect(0, 0, 6, canvas.height);
-            
             ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 24px -apple-system, sans-serif";
-            ctx.fillText(hostString, 25, 75);
-            
-            ctx.fillStyle = "#8e8e93";
-            ctx.font = "13px -apple-system, sans-serif";
-            let displayPath = targetUrl.length > 55 ? targetUrl.substring(0, 52) + "..." : targetUrl;
-            ctx.fillText(displayPath, 25, 115);
-            
-            // Frame Asset Status Block
-            ctx.fillStyle = "rgba(255,255,255,0.03)";
-            ctx.fillRect(25, 155, 430, 80);
-            ctx.border = "1px solid rgba(255,255,255,0.1)";
-            
-            ctx.fillStyle = "#34C759";
-            ctx.beginPath(); ctx.arc(45, 195, 4, 0, Math.PI * 2); ctx.fill();
-            
-            ctx.fillStyle = "#34C759";
-            ctx.font = "bold 11px monospace";
-            ctx.fillText("LIVE RE-DIRECT SYSTEM CONNECTION ESTABLISHED", 60, 199);
-            
-            ctx.fillStyle = "#aeaeb2";
-            ctx.font = "11px monospace";
-            ctx.fillText("SWIPE UP TO OVERLAY ON HOME SCREEN", 60, 218);
-        }
+            ctx.fillText("Failed to capture website image layout.", 50, 100);
+            status.innerText = "Error pulling page image.";
+        };
 
-        setInterval(processVideoMatrix, 60);
-
-        let activeStreamNode = canvas.captureStream(30);
+        // Keep the canvas stream active at a low frame rate since it's a static image
+        let activeStreamNode = canvas.captureStream(5);
         video.srcObject = activeStreamNode;
 
         button.addEventListener('click', async () => {
             try {
-                activeStreamNode = canvas.captureStream(30);
+                activeStreamNode = canvas.captureStream(5);
                 video.srcObject = activeStreamNode;
                 await video.play();
 
