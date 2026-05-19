@@ -5,27 +5,42 @@
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
         iframe { width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0; z-index: 1; }
-        #pipBtn { 
-            position: absolute; top: 10px; left: 5%; width: 90%; height: 50px; 
-            background: #007AFF; color: white; border: none; font-size: 16px; 
-            font-weight: bold; border-radius: 12px; z-index: 10; cursor: pointer;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
+        
+        /* The Wrapper Button Styling */
+        #btnContainer { 
+            position: absolute; top: 10px; left: 5%; width: 90%; height: 55px; 
+            background: #007AFF; border-radius: 12px; z-index: 10;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.5); overflow: hidden;
         }
-        /* Slightly larger rendering to force iOS to recognize it as an active layer */
-        #pipVideo { position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; opacity: 0.01; z-index: 5; }
+
+        /* TEXT OVERLAY: Positioned directly beneath the transparent video */
+        #btnText {
+            position: absolute; width: 100%; height: 100%; display: flex;
+            align-items: center; justify-content: center; color: white;
+            font-size: 16px; font-weight: bold; pointer-events: none; z-index: 11;
+        }
+
+        /* HARDWARE TRICK: The video fills the entire button layout! */
+        /* It is completely visible to iOS, but we use a mix-blend mode to make it clear */
+        #pipVideo { 
+            width: 100%; height: 100%; object-fit: cover; opacity: 0.15; 
+            z-index: 12; position: absolute; top: 0; left: 0; cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-    <button id="pipBtn">👉 Tap to Float Page (PiP) 👈</button>
+    <div id="btnContainer">
+        <div id="btnText">👉 Tap to Float Page (PiP) 👈</div>
+        <!-- Changing the stream source to a highly optimized lightweight video loop -->
+        <video id="pipVideo" playsinline muted loop src="https://googleapis.com"></video>
+    </div>
+    
     <iframe src="about:blank" id="webFrame"></iframe>
-
-    <!-- Using a highly optimized, standard web stream loop -->
-    <video id="pipVideo" playsinline muted loop src="https://googleapis.com"></video>
 
     <script>
         const video = document.getElementById('pipVideo');
-        const button = document.getElementById('pipBtn');
+        const container = document.getElementById('btnContainer');
         const frame = document.getElementById('webFrame');
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -41,32 +56,36 @@
         
         frame.src = targetUrl;
 
-        button.addEventListener('click', async () => {
-            // First, force play the media to satisfy the iOS user-interaction clause
+        // Force stream to pre-buffer as soon as page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            video.load();
+        });
+
+        // Your touch event handles the raw video window element directly
+        video.addEventListener('click', async (e) => {
+            e.preventDefault();
             try {
                 await video.play();
                 
-                // Once verified active, break the element out into system PiP layer
                 if (video.webkitSetPresentationMode) {
                     video.webkitSetPresentationMode('picture-in-picture');
-                    button.style.display = 'none'; 
+                    container.style.display = 'none'; 
                 } else if (document.pictureInPictureEnabled) {
                     await video.requestPictureInPicture();
-                    button.style.display = 'none';
+                    container.style.display = 'none';
                 }
             } catch (err) {
-                // Instantly try an alternate software fallback if hardware pipeline stalls
-                if (video.webkitSetPresentationMode) {
-                    try {
-                        video.webkitSetPresentationMode('picture-in-picture');
-                        button.style.display = 'none';
-                    } catch(e) {
-                        console.log("Stalled");
-                    }
+                // Double layout retry loop fallback
+                try {
+                    video.webkitSetPresentationMode('picture-in-picture');
+                    container.style.display = 'none';
+                } catch(fallbackErr) {
+                    alert("Pipeline stalling. Please reload page and tap again.");
                 }
             }
         });
     </script>
 </body>
 </html>
+
 
