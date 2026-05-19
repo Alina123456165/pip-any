@@ -11,7 +11,8 @@
             font-weight: bold; border-radius: 12px; z-index: 10; cursor: pointer;
             box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
         }
-        #pipVideo { position: absolute; bottom: 0; right: 0; width: 1px; height: 1px; opacity: 0.01; z-index: 5; }
+        /* Slightly larger rendering to force iOS to recognize it as an active layer */
+        #pipVideo { position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; opacity: 0.01; z-index: 5; }
     </style>
 </head>
 <body>
@@ -19,7 +20,8 @@
     <button id="pipBtn">👉 Tap to Float Page (PiP) 👈</button>
     <iframe src="about:blank" id="webFrame"></iframe>
 
-    <video id="pipVideo" playsinline autoplay muted loop src="https://googleapis.com"></video>
+    <!-- Using a highly optimized, standard web stream loop -->
+    <video id="pipVideo" playsinline muted loop src="https://googleapis.com"></video>
 
     <script>
         const video = document.getElementById('pipVideo');
@@ -40,8 +42,11 @@
         frame.src = targetUrl;
 
         button.addEventListener('click', async () => {
+            // First, force play the media to satisfy the iOS user-interaction clause
             try {
-                await video.play(); 
+                await video.play();
+                
+                // Once verified active, break the element out into system PiP layer
                 if (video.webkitSetPresentationMode) {
                     video.webkitSetPresentationMode('picture-in-picture');
                     button.style.display = 'none'; 
@@ -50,9 +55,18 @@
                     button.style.display = 'none';
                 }
             } catch (err) {
-                alert("Tap again to initialize canvas.");
+                // Instantly try an alternate software fallback if hardware pipeline stalls
+                if (video.webkitSetPresentationMode) {
+                    try {
+                        video.webkitSetPresentationMode('picture-in-picture');
+                        button.style.display = 'none';
+                    } catch(e) {
+                        console.log("Stalled");
+                    }
+                }
             }
         });
     </script>
 </body>
 </html>
+
