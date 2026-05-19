@@ -1,55 +1,44 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; font-family: -apple-system, sans-serif; overflow: hidden; }
-        #controlHeader { position: fixed; top: 0; width: 100%; height: 120px; background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; }
-        #pipBtn { width: 90%; height: 60px; background: #007AFF; color: white; border-radius: 12px; border: none; font-weight: bold; font-size: 16px; }
-        #status { color: #8e8e93; font-size: 11px; margin-top: 10px; }
-        canvas { position: absolute; top: 140px; left: 5%; width: 90%; height: auto; }
-        video { display: none; }
+        body { background: #000; color: #fff; text-align: center; font-family: sans-serif; }
+        #launchBtn { width: 80%; padding: 20px; font-size: 18px; background: #007AFF; border-radius: 10px; border: none; color: white; margin-top: 50px; }
+        #status { margin-top: 20px; color: #888; }
+        canvas { display: none; }
     </style>
 </head>
 <body>
-    <div id="controlHeader">
-        <button id="pipBtn">⚡️ LAUNCH FROM CLIPBOARD</button>
-        <div id="status">Ready. Copy shortcut data, then tap here.</div>
-    </div>
+    <button id="launchBtn">⚡️ STEP 1: PASTE DATA</button>
+    <div id="status">Tap button, then choose "Paste" from the menu.</div>
     <canvas id="streamCanvas" width="500" height="800"></canvas>
-    <video id="pipMediaTrack" playsinline muted loop src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA=="></video>
+    <video id="vid" playsinline muted loop></video>
 
     <script>
-        const video = document.getElementById('pipMediaTrack');
+        const btn = document.getElementById('launchBtn');
+        const vid = document.getElementById('vid');
         const canvas = document.getElementById('streamCanvas');
         const ctx = canvas.getContext('2d');
-        const btn = document.getElementById('pipBtn');
-        const status = document.getElementById('status');
 
         btn.onclick = async () => {
             try {
-                status.innerText = "Requesting clipboard permission...";
-                // Force a short pause to ensure the user gesture propagates to the browser API
-                await new Promise(r => setTimeout(r, 200));
+                // Manually trigger the paste operation
                 const text = await navigator.clipboard.readText();
+                if(!text) throw new Error("Empty");
                 
-                status.innerText = "Parsing image data...";
                 const img = new Image();
                 img.src = 'data:image/png;base64,' + text;
-
                 img.onload = () => {
-                    ctx.fillStyle = "#000";
-                    ctx.fillRect(0,0, canvas.width, canvas.height);
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
-                    video.srcObject = canvas.captureStream(30);
-                    video.play();
-                    video.webkitSetPresentationMode('picture-in-picture');
-                    status.innerText = "Success! PiP active.";
+                    ctx.drawImage(img, 0, 0, 500, 800);
+                    vid.srcObject = canvas.captureStream(30);
+                    vid.play();
+                    vid.webkitSetPresentationMode('picture-in-picture');
                 };
-            } catch (err) {
-                status.innerText = "Error: Permission denied or clipboard empty.";
-                console.error(err);
+            } catch (e) {
+                // If it fails, force the browser to show the Paste menu
+                document.execCommand('paste');
+                alert("If it didn't launch, tap the button again and hit 'Paste'.");
             }
         };
     </script>
