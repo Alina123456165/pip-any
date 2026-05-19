@@ -17,7 +17,7 @@
             font-weight: bold; border-radius: 10px; cursor: pointer;
             box-shadow: 0px 4px 15px rgba(0,122,255,0.3);
         }
-        #pipBtn:disabled { background: #1c1c1e; color: #34C759; border: 1px solid #34C759; cursor: not-allowed; }
+        #pipBtn:disabled { background: #1c1c1e; color: #ff9500; border: 1px solid #ff9500; cursor: not-allowed; }
         
         #statusText { color: #8e8e93; font-size: 12px; margin-top: 5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
 
@@ -28,8 +28,8 @@
 <body>
 
     <div id="controlHeader">
-        <button id="pipBtn" disabled>⏳ PROCESSING SCREENSHOT...</button>
-        <div id="statusText">Reading device stream payload...</div>
+        <button id="pipBtn" disabled>⏳ RNDR: PROCESSING DATA...</button>
+        <div id="statusText">Reading device snapshot payload...</div>
     </div>
     
     <canvas id="streamCanvas" width="800" height="1200"></canvas>
@@ -43,45 +43,43 @@
         const status = document.getElementById('statusText');
         const ctx = canvas.getContext('2d');
 
-        // Extract the URL parameter string data
+        // Grab raw query parameter window directly
         const urlParams = new URLSearchParams(window.location.search);
-        let encodedData = urlParams.get('img');
+        let incomingImgData = urlParams.get('img');
 
-        if (encodedData) {
+        if (incomingImgData) {
             try {
-                // Decode the URL wrapper safely to access the clean Base64 string
-                let base64Data = decodeURIComponent(encodedData).replace(/ /g, '+');
+                // Safely translate the incoming sanitized URL data string back to image text
+                let cleanBase64 = decodeURIComponent(incomingImgData).replace(/ /g, '+');
                 
                 const nativeImg = new Image();
-                nativeImg.src = 'data:image/png;base64,' + base64Data;
+                nativeImg.src = 'data:image/png;base64,' + cleanBase64;
 
                 nativeImg.onload = function() {
                     ctx.fillStyle = "#000000";
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    
-                    // Stamp the screenshot to the active viewport
                     ctx.drawImage(nativeImg, 0, 0, canvas.width, canvas.height);
                     
                     video.srcObject = canvas.captureStream(30);
                     
                     button.disabled = false;
                     button.innerText = "⚡️ POP PAGE INTO FLOATING WINDOW ⚡️";
-                    status.innerText = "DEVICE SNAPSHOT ENGAGED.";
+                    status.innerText = "SNAPSHOT INJECTED. READY.";
                     
-                    // Keep frame refreshes alive to defeat iOS 18 background sleeping
+                    // Continual re-draw tick keeps Safari from timing out the video stream
                     setInterval(() => {
                         ctx.drawImage(nativeImg, 0, 0, canvas.width, canvas.height);
                     }, 33);
                 };
                 
                 nativeImg.onerror = function() {
-                    status.innerText = "Data parsing error. Image string corrupt.";
+                    status.innerText = "Error decoding image data package.";
                 };
             } catch (err) {
-                status.innerText = "Decoding failure. Check Shortcut variables.";
+                status.innerText = "Failed parsing incoming string parameters.";
             }
         } else {
-            status.innerText = "Waiting for data. Link contains plain text instead of dynamic variables.";
+            status.innerText = "No image found. Check shortcut URL variable layout.";
         }
 
         button.addEventListener('click', async () => {
