@@ -40,26 +40,32 @@
             domainName = new URL(targetUrl).hostname.replace('www.', '');
         } catch(e) {}
 
-        // Set up moving particle coordinates
+        // Active background matrix arrays
         let particles = [];
-        for(let i = 0; i < 20; i++) {
+        for(let i = 0; i < 30; i++) {
             particles.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
-                radius: Math.random() * 2 + 1,
-                speed: Math.random() * 0.8 + 0.4
+                radius: Math.random() * 2.5 + 1,
+                speed: Math.random() * 1.2 + 0.4
             });
         }
 
-        let pulse = 0;
+        let runClock = 0;
 
         function renderPipeline() {
-            // Draw background
+            runClock += 0.05;
+
+            // Compute structural micro-jitter coordinates to disrupt iOS layout caching
+            let jitterX = Math.sin(runClock * 2) * 0.4;
+            let jitterY = Math.cos(runClock * 2) * 0.4;
+
+            // Reset background context canvas canvas context frame buffer
             ctx.fillStyle = "#08080a";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Animate space dots (keeps video track updating frames constantly)
-            ctx.fillStyle = "rgba(0, 122, 255, 0.2)";
+            // Animate active flow matrix fields
+            ctx.fillStyle = "rgba(0, 122, 255, 0.25)";
             particles.forEach(p => {
                 p.y -= p.speed;
                 if(p.y < 0) { p.y = canvas.height; p.x = Math.random() * canvas.width; }
@@ -68,53 +74,49 @@
                 ctx.fill();
             });
 
-            // UI Top Panel Header Layout
+            // Structural top layout bar border container
             ctx.fillStyle = "#121216";
             ctx.fillRect(0, 0, canvas.width, 110);
             ctx.strokeStyle = "#1c1c22";
             ctx.lineWidth = 2;
             ctx.beginPath(); ctx.moveTo(0, 110); ctx.lineTo(canvas.width, 110); ctx.stroke();
 
-            // Pumping Indicator Dot
-            pulse += 0.08;
-            let dotAlpha = 0.4 + Math.sin(pulse) * 0.4;
-            ctx.fillStyle = `rgba(52, 199, 89, ${dotAlpha})`;
+            // Status blinking neon point coordinate tracking indicator
+            let pulseAlpha = 0.4 + Math.sin(runClock * 1.5) * 0.4;
+            ctx.fillStyle = `rgba(52, 199, 89, ${pulseAlpha})`;
             ctx.beginPath(); ctx.arc(45, 55, 8, 0, Math.PI * 2); ctx.fill();
 
-            // Top Header text strings
             ctx.fillStyle = "#aeaeb2";
             ctx.font = "bold 15px monospace";
-            ctx.fillText("LIVE PIPELINE INTERACTION ACTIVE", 70, 60);
+            ctx.fillText("LIVE SYSTEM ENGINE CONNECTED", 70, 60);
 
-            // Domain view block metrics
+            // Print parsed layout strings with dynamic jitter modifications
             ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 44px -apple-system, sans-serif";
-            ctx.fillText(domainName, 45, 240);
+            ctx.font = "bold 46px -apple-system, sans-serif";
+            ctx.fillText(domainName, 45 + jitterX, 240 + jitterY);
 
             ctx.fillStyle = "#007AFF";
             ctx.font = "500 20px -apple-system, sans-serif";
             let shortUrl = targetUrl.length > 48 ? targetUrl.substring(0, 45) + "..." : targetUrl;
-            ctx.fillText(shortUrl, 45, 295);
+            ctx.fillText(shortUrl, 45 + jitterX, 295 + jitterY);
 
-            // Secondary Info Panel Layout Frame Metrics text
+            // Interface diagnostic tracking strings
             ctx.fillStyle = "#48484a";
             ctx.font = "600 14px monospace";
-            ctx.fillText(`STREAM: 30FPS // APPLE HARDWARE SYNCED`, 45, 380);
-            ctx.fillText(`STATUS: CONTENT BUFFER OK`, 45, 410);
+            ctx.fillText(`STREAM FREQUENCY: 60FPS // MOTOR ENGINE OK`, 45 + jitterX, 380 + jitterY);
+            ctx.fillText(`CONTEXT STATUS: DEEP REDRAW FORCE REFRESH`, 45 + jitterX, 410 + jitterY);
         }
 
-        // DOUBLE-LOCK CORE TIMERS: Combined interval loops ensure video tracks never stop firing frames
-        setInterval(renderPipeline, 33);
+        // Hardware tracking clock configuration loops
+        setInterval(renderPipeline, 16); // True 60Hz Engine Tick execution loop thread
 
-        let mediaStream = canvas.captureStream(30);
+        let mediaStream = canvas.captureStream(60);
         video.srcObject = mediaStream;
 
         button.addEventListener('click', async () => {
             try {
-                // Instantly re-map fresh streams to kick out frozen thread states
-                mediaStream = canvas.captureStream(30);
+                mediaStream = canvas.captureStream(60);
                 video.srcObject = mediaStream;
-                
                 await video.play();
 
                 if (video.webkitSetPresentationMode) {
@@ -123,8 +125,8 @@
                     await video.requestPictureInPicture();
                 }
             } catch (err) {
-                console.error("Stream Recovery Action:", err);
-                mediaStream = canvas.captureStream(30);
+                console.error(err);
+                mediaStream = canvas.captureStream(60);
                 video.srcObject = mediaStream;
                 await video.play();
                 if (video.webkitSetPresentationMode) video.webkitSetPresentationMode('picture-in-picture');
