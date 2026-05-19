@@ -17,7 +17,6 @@
 <body>
 
     <button id="pipBtn">⚡️ POP PAGE INTO FLOATING WINDOW ⚡️</button>
-
     <canvas id="renderCanvas" width="600" height="1000"></canvas>
     <video id="pipVideo" playsinline muted loop></video>
 
@@ -27,34 +26,33 @@
         const canvas = document.getElementById('renderCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Grab the raw image data passed directly from your iPhone Shortcut
+        // This checks for the clean imgLink parameter coming from your shortcut
         const urlParams = new URLSearchParams(window.location.search);
-        let base64Image = urlParams.get('img');
+        let imgLink = urlParams.get('imgLink');
 
         const img = new Image();
-        
-        if (base64Image) {
-            // Rebuild the image from the shortcut data
-            img.src = "data:image/jpeg;base64," + base64Image.replace(/ /g, "+");
+        img.crossOrigin = "anonymous"; // Essential step: unblocks iOS canvas rules
+
+        if (imgLink) {
+            img.src = imgLink;
         } else {
-            // Default placeholder if opened without shortcut
+            // Default text if you open the link manually without the shortcut
             ctx.fillStyle = "#222";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "#fff";
             ctx.font = "24px Arial";
-            ctx.fillText("Open this via your Share Sheet Shortcut!", 50, 100);
+            ctx.fillText("Launch this using your custom Share Sheet tool!", 40, 100);
         }
 
         img.onload = function() {
-            // Keep drawing the image to keep the video stream active
+            // Constantly render the image to canvas to satisfy iOS video streams
             setInterval(() => {
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             }, 100);
 
-            // Feed the canvas into the video layout
             const stream = canvas.captureStream(10); 
             video.srcObject = stream;
-            video.play().catch(e => console.log("Waiting for tap"));
+            video.play().catch(e => console.log("Awaiting finger tap interaction"));
         };
 
         button.addEventListener('click', async () => {
@@ -63,12 +61,9 @@
                 if (video.webkitSetPresentationMode) {
                     video.webkitSetPresentationMode('picture-in-picture');
                     button.style.display = 'none';
-                } else if (document.pictureInPictureEnabled) {
-                    await video.requestPictureInPicture();
-                    button.style.display = 'none';
                 }
             } catch (err) {
-                alert("Tap once more to engage hardware.");
+                alert("Tap once more to engage hardware canvas loop.");
             }
         });
     </script>
