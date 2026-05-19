@@ -23,16 +23,14 @@
 
         #hiddenImg { display: none; }
         canvas { position: absolute; top: 110px; left: 5%; width: 90%; height: auto; border-radius: 8px; background: #111116; display: block; }
-        
-        /* Keep video fully visible at 1px size to bypass iOS 18.5 background thread throttling */
         video { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0.01; z-index: 99999; pointer-events: none; }
     </style>
 </head>
 <body>
 
     <div id="controlHeader">
-        <button id="pipBtn" disabled>⏳ CAPTURING VISUAL WEB VIEW...</button>
-        <div id="statusText">Initializing image pipeline...</div>
+        <button id="pipBtn" disabled>⏳ PROXYING WEB VIEW IMAGE...</button>
+        <div id="statusText">Bypassing security filters...</div>
     </div>
     
     <img id="hiddenImg" />
@@ -56,34 +54,72 @@
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#ffffff";
         ctx.font = "bold 32px -apple-system, sans-serif";
-        ctx.fillText("Processing webpage screenshot...", 60, 160);
+        ctx.fillText("Rendering proxied web snapshot...", 60, 160);
 
-        // Using the ultra-stable s-shot capture mirror
-        const screenshotUrl = `https://mini.s-shot.ru/1024x768/800/jpeg/?${encodeURIComponent(targetUrl)}`;
+        // Core URL target generator
+        const rawScreenshot = `https://mini.s-shot.ru/1024x768/800/jpeg/?${encodeURIComponent(targetUrl)}`;
+        
+        // FIX: Routes the image url through an open CORS proxy wrapper. 
+        // This strips the cross-origin headers, preventing the SecurityError.
+        const proxiedUrl = `https://corsproxy.io/?${encodeURIComponent(rawScreenshot)}`;
         
         img.crossOrigin = "anonymous";
-        img.src = screenshotUrl;
+        img.src = proxiedUrl;
 
         let engineActive = false;
         let toggle = 0;
 
         img.onload = function() {
-            ctx.fillStyle = "#000000";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            
-            // Bind the active canvas capture stream to the video asset node
-            video.srcObject = canvas.captureStream(30);
-            engineActive = true;
+            try {
+                ctx.fillStyle = "#000000";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                // Establish canvas streaming link safely now that CORS block is cleared
+                video.srcObject = canvas.captureStream(30);
+                engineActive = true;
 
-            button.disabled = false;
-            button.innerText = "⚡️ POP PAGE INTO FLOATING WINDOW ⚡️";
-            status.innerText = "Pipeline hot. Click to launch.";
+                button.disabled = false;
+                button.innerText = "⚡️ POP PAGE INTO FLOATING WINDOW ⚡️";
+                status.innerText = "Pipeline clean. Ready to float.";
+            } catch (securityErr) {
+                console.error(securityErr);
+                status.innerText = "Canvas capture security exception encountered.";
+            }
         };
 
         img.onerror = function() {
-            // Instant fallback re-route to Microlink if s-shot API bottlenecks
-            img.src = `https://api.microlink.io/?url=${encodeURIComponent(targetUrl)}&screenshot=true&embed=screenshot.url`;
+            // Backup proxy route fallback option
+            const altScreenshot = `https://api.microlink.io/?url=${encodeURIComponent(targetUrl)}&screenshot=true&embed=screenshot.url`;
+            img.src = `https://corsproxy.io/?${encodeURIComponent(altScreenshot)}`;
+            status.innerText = "Re-routing image through secondary proxy...";
         };
 
-        //
+        function refreshFrame() {
+            if (engineActive) {
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                toggle = (toggle + 1) % 2;
+                ctx.fillStyle = `rgba(0, 0, 0, ${toggle ? 0.01 : 0.02})`;
+                ctx.fillRect(0, 0, 1, 1);
+            }
+        }
+        setInterval(refreshFrame, 33);
+
+        button.addEventListener('click', async () => {
+            try {
+                await video.play();
+                if (video.webkitSetPresentationMode) {
+                    video.webkitSetPresentationMode('picture-in-picture');
+                } else if (document.pictureInPictureEnabled) {
+                    await video.requestPictureInPicture();
+                }
+            } catch (err) {
+                console.error(err);
+                video.srcObject = canvas.captureStream(30);
+                await video.play();
+                if (video.webkitSetPresentationMode) video.webkitSetPresentationMode('picture-in-picture');
+            }
+        });
+    </script>
+</body>
+</html>
