@@ -10,7 +10,7 @@
             font-weight: bold; border-radius: 12px; z-index: 10; cursor: pointer;
             box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
         }
-        #pipBtn:transparent { opacity: 0.4; }
+        #pipBtn:active { background: #0056b3; }
         canvas { display: none; }
         video { position: absolute; bottom: 10px; right: 10px; width: 1px; height: 1px; opacity: 0.01; z-index: 5; }
     </style>
@@ -40,26 +40,26 @@
             domainName = new URL(targetUrl).hostname.replace('www.', '');
         } catch(e) {}
 
-        // Active background particle generator parameters
+        // Set up moving particle coordinates
         let particles = [];
-        for(let i = 0; i < 25; i++) {
+        for(let i = 0; i < 20; i++) {
             particles.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
-                radius: Math.random() * 3 + 1,
-                speed: Math.random() * 1 + 0.5
+                radius: Math.random() * 2 + 1,
+                speed: Math.random() * 0.8 + 0.4
             });
         }
 
         let pulse = 0;
 
-        function drawLoop() {
-            // Render Background Base
+        function renderPipeline() {
+            // Draw background
             ctx.fillStyle = "#08080a";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw Live Moving Background Matrix (Forces Safari to keep video context alive)
-            ctx.fillStyle = "rgba(0, 122, 255, 0.15)";
+            // Animate space dots (keeps video track updating frames constantly)
+            ctx.fillStyle = "rgba(0, 122, 255, 0.2)";
             particles.forEach(p => {
                 p.y -= p.speed;
                 if(p.y < 0) { p.y = canvas.height; p.x = Math.random() * canvas.width; }
@@ -68,7 +68,7 @@
                 ctx.fill();
             });
 
-            // Status Control Panel Header Layout
+            // UI Top Panel Header Layout
             ctx.fillStyle = "#121216";
             ctx.fillRect(0, 0, canvas.width, 110);
             ctx.strokeStyle = "#1c1c22";
@@ -76,17 +76,17 @@
             ctx.beginPath(); ctx.moveTo(0, 110); ctx.lineTo(canvas.width, 110); ctx.stroke();
 
             // Pumping Indicator Dot
-            pulse += 0.07;
-            let dotAlpha = 0.5 + Math.sin(pulse) * 0.5;
+            pulse += 0.08;
+            let dotAlpha = 0.4 + Math.sin(pulse) * 0.4;
             ctx.fillStyle = `rgba(52, 199, 89, ${dotAlpha})`;
             ctx.beginPath(); ctx.arc(45, 55, 8, 0, Math.PI * 2); ctx.fill();
 
-            // Header Labels
+            // Top Header text strings
             ctx.fillStyle = "#aeaeb2";
             ctx.font = "bold 15px monospace";
-            ctx.fillText("LIVE MEDIA STREAM ACTIVE", 70, 60);
+            ctx.fillText("LIVE PIPELINE INTERACTION ACTIVE", 70, 60);
 
-            // Main Layout Container Text
+            // Domain view block metrics
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 44px -apple-system, sans-serif";
             ctx.fillText(domainName, 45, 240);
@@ -96,25 +96,22 @@
             let shortUrl = targetUrl.length > 48 ? targetUrl.substring(0, 45) + "..." : targetUrl;
             ctx.fillText(shortUrl, 45, 295);
 
-            // Interface diagnostics metadata telemetry
+            // Secondary Info Panel Layout Frame Metrics text
             ctx.fillStyle = "#48484a";
             ctx.font = "600 14px monospace";
-            ctx.fillText(`STREAM FREQUENCY: 30FPS // HARWARE ACCELERATED`, 45, 380);
-            ctx.fillText(`ROUTING PORT: LIVE CANVAS PIP LINK`, 45, 410);
-
-            requestAnimationFrame(drawLoop);
+            ctx.fillText(`STREAM: 30FPS // APPLE HARDWARE SYNCED`, 45, 380);
+            ctx.fillText(`STATUS: CONTENT BUFFER OK`, 45, 410);
         }
 
-        // Initialize execution frame threading loop
-        requestAnimationFrame(drawLoop);
+        // DOUBLE-LOCK CORE TIMERS: Combined interval loops ensure video tracks never stop firing frames
+        setInterval(renderPipeline, 33);
 
-        // Bind raw stream outputs
         let mediaStream = canvas.captureStream(30);
         video.srcObject = mediaStream;
 
         button.addEventListener('click', async () => {
             try {
-                // Instantly re-verify stream mapping coordinates to wipe iOS execution memory clean
+                // Instantly re-map fresh streams to kick out frozen thread states
                 mediaStream = canvas.captureStream(30);
                 video.srcObject = mediaStream;
                 
@@ -126,7 +123,7 @@
                     await video.requestPictureInPicture();
                 }
             } catch (err) {
-                console.error(err);
+                console.error("Stream Recovery Action:", err);
                 mediaStream = canvas.captureStream(30);
                 video.srcObject = mediaStream;
                 await video.play();
@@ -136,7 +133,6 @@
     </script>
 </body>
 </html>
-
 
 
 
