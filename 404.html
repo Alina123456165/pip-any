@@ -32,8 +32,9 @@
 
         if (pathName && pathName !== "pip-any" && pathName !== "404.html") {
             try {
-                // Decode the base64 URL path chunk back into a clean website link
-                targetUrl = atob(pathName);
+                // Restore any converted underscore characters back to forward slashes before decoding
+                let safeBase64 = pathName.replace(/_/g, '/');
+                targetUrl = atob(safeBase64);
             } catch(e) {
                 console.log("Error decoding path string, using default fallback.");
             }
@@ -83,3 +84,4 @@
     </script>
 </body>
 </html>
+
