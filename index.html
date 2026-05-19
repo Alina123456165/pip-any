@@ -46,21 +46,23 @@
         let targetUrl = urlParams.get('url') || "https://en.m.wikipedia.org/wiki/Candy_bar";
         if (!targetUrl.startsWith('http')) { targetUrl = 'https://' + targetUrl; }
 
-        // Render loading state card text layout
+        // Core dynamic video looping variables
+        let imageLoaded = false;
+        let tick = 0;
+        const webImage = new Image();
+
+        // Render early boot loading panel text layouts onto canvas frame buffer
         ctx.fillStyle = "#111116";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "#ffffff";
         ctx.font = "bold 32px -apple-system, sans-serif";
         ctx.fillText("Processing live screenshot frame payload...", 60, 160);
 
+        // Standard Microlink target mapping string parameters
         const screenshotUrl = `https://api.microlink.io/?url=${encodeURIComponent(targetUrl)}&screenshot=true&embed=screenshot.url`;
         
-        const webImage = new Image();
         webImage.crossOrigin = "anonymous"; 
         webImage.src = screenshotUrl;
-
-        let imageLoaded = false;
-        let tick = 0;
 
         webImage.onload = function() {
             imageLoaded = true;
@@ -69,4 +71,9 @@
             status.innerText = "Connection active. Ready to float view.";
         };
 
-        webImage.onerror = function()
+        webImage.onerror = function() {
+            ctx.fillStyle = "#ff453a";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "30px sans-serif";
+            ctx
