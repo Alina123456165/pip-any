@@ -12,13 +12,11 @@
         }
         canvas { display: none; }
         video { position: absolute; bottom: 10px; right: 10px; width: 1px; height: 1px; opacity: 0.01; z-index: 5; }
-        #status { position: absolute; top: 80px; width: 100%; text-align: center; color: #888; font-size: 14px; z-index: 2; }
     </style>
 </head>
 <body>
 
     <button id="pipBtn">⚡️ POP PAGE INTO FLOATING WINDOW ⚡️</button>
-    <div id="status">Generating page snapshot... please wait 3 seconds...</div>
     <canvas id="renderCanvas" width="600" height="1000"></canvas>
     <video id="pipVideo" playsinline muted loop></video>
 
@@ -26,70 +24,50 @@
         const video = document.getElementById('pipVideo');
         const button = document.getElementById('pipBtn');
         const canvas = document.getElementById('renderCanvas');
-        const statusText = document.getElementById('status');
         const ctx = canvas.getContext('2d');
 
         const urlParams = new URLSearchParams(window.location.search);
         let targetUrl = urlParams.get('url') || "https://wikipedia.org";
 
-        if(targetUrl.includes("en.wikipedia.org") && !targetUrl.includes("en.m.wikipedia.org")) {
-            targetUrl = targetUrl.replace("en.wikipedia.org", "en.m.wikipedia.org");
-        }
-
-        if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
-            targetUrl = 'https://' + targetUrl;
-        }
+        // Fix cross-origin naming formatting
+        targetUrl = decodeURIComponent(targetUrl);
+        if (!targetUrl.startsWith('http')) { targetUrl = 'https://' + targetUrl; }
 
         const img = new Image();
         img.crossOrigin = "anonymous"; 
 
-        // Core URL points directly to WordPress MShots engine [1]
-        let baseSrc = "https://wp.com" + encodeURIComponent(targetUrl) + "?w=600&h=1000";
-        img.src = baseSrc;
+        // Primary lighting fast backup engine
+        img.src = "https://wp.com" + encodeURIComponent(targetUrl) + "?w=600&h=1000";
 
         img.onload = function() {
-            // SELF-HEALING TRICK: Check if the returned image is a blank generating placeholder
-            // If the image is extremely tiny or matches server loading parameters, trigger a smart loop reload [1]
-            if (img.naturalWidth < 100 || img.naturalHeight < 100) {
-                setTimeout(reloadImage, 2000); // Try fetching again in 2 seconds [1]
-                return;
-            }
-
-            statusText.style.display = 'none'; // Unlocks interface view
-            
-            setInterval(() => {
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            }, 100);
-
-            const stream = canvas.captureStream(10); 
-            video.srcObject = stream;
-            video.play().catch(e => console.log("Awaiting loop trigger"));
+            startCanvasStream();
         };
 
         img.onerror = function() {
-            setTimeout(reloadImage, 2000);
+            // IF SERVER FAILS: Draw a clean fallback display window text layer immediately so it doesn't stay black
+            ctx.fillStyle = "#1a1a1a";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 28px sans-serif";
+            ctx.fillText("Loading Wikipedia View...", 50, 150);
+            ctx.font = "20px sans-serif";
+            ctx.fillStyle = "#888888";
+            ctx.fillText(targetUrl.substring(0, 45) + "...", 50, 200);
+            
+            // Build the video link manually out of the local canvas drawing
+            const stream = canvas.captureStream(10); 
+            video.srcObject = stream;
+            video.play().catch(e => console.log("Ready"));
         };
 
-        function reloadImage() {
-            statusText.innerText = "Server rendering page layout... updating frame...";
-            // Appending a random counter breaks browser caching so it grabs the fresh snapshot image [1]
-            img.src = baseSrc + "&r=" + Math.random();
+        function startCanvasStream() {
+            setInterval(() => {
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            }, 100);
+            const stream = canvas.captureStream(10); 
+            video.srcObject = stream;
+            video.play().catch(e => console.log("Active"));
         }
-
-        button.addEventListener('click', async () => {
-            try {
-                await video.play();
-                if (video.webkitSetPresentationMode) {
-                    video.webkitSetPresentationMode('picture-in-picture');
-                    button.style.display = 'none';
-                } else if (document.pictureInPictureEnabled) {
-                    await video.requestPictureInPicture();
-                    button.style.display = 'none';
-                }
-            } catch (err) {
-                alert("Canvas initializing. Tap once more.");
-            }
-        });
     </script>
 </body>
 </html>
