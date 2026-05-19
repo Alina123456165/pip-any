@@ -28,8 +28,8 @@
 <body>
 
     <div id="controlHeader">
-        <button id="pipBtn" disabled>⏳ RNDR: PROCESSING DATA...</button>
-        <div id="statusText">Reading device snapshot payload...</div>
+        <button id="pipBtn" disabled>⏳ RECEIVING SNAPSHOT DATA...</button>
+        <div id="statusText">Decoding local payload stream...</div>
     </div>
     
     <canvas id="streamCanvas" width="800" height="1200"></canvas>
@@ -43,43 +43,38 @@
         const status = document.getElementById('statusText');
         const ctx = canvas.getContext('2d');
 
-        // Grab raw query parameter window directly
         const urlParams = new URLSearchParams(window.location.search);
-        let incomingImgData = urlParams.get('img');
+        let base64Data = urlParams.get('img');
 
-        if (incomingImgData) {
-            try {
-                // Safely translate the incoming sanitized URL data string back to image text
-                let cleanBase64 = decodeURIComponent(incomingImgData).replace(/ /g, '+');
+        if (base64Data) {
+            // Clean up web encoding spaces
+            base64Data = base64Data.replace(/ /g, '+');
+            
+            const nativeImg = new Image();
+            nativeImg.src = 'data:image/png;base64,' + base64Data;
+
+            nativeImg.onload = function() {
+                ctx.fillStyle = "#000000";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(nativeImg, 0, 0, canvas.width, canvas.height);
                 
-                const nativeImg = new Image();
-                nativeImg.src = 'data:image/png;base64,' + cleanBase64;
-
-                nativeImg.onload = function() {
-                    ctx.fillStyle = "#000000";
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                video.srcObject = canvas.captureStream(30);
+                
+                button.disabled = false;
+                button.innerText = "⚡️ POP PAGE INTO FLOATING WINDOW ⚡️";
+                status.innerText = "STREAM OVERLAY ACTIVE.";
+                
+                // Hardware refresh cycle prevents background freezing
+                setInterval(() => {
                     ctx.drawImage(nativeImg, 0, 0, canvas.width, canvas.height);
-                    
-                    video.srcObject = canvas.captureStream(30);
-                    
-                    button.disabled = false;
-                    button.innerText = "⚡️ POP PAGE INTO FLOATING WINDOW ⚡️";
-                    status.innerText = "SNAPSHOT INJECTED. READY.";
-                    
-                    // Continual re-draw tick keeps Safari from timing out the video stream
-                    setInterval(() => {
-                        ctx.drawImage(nativeImg, 0, 0, canvas.width, canvas.height);
-                    }, 33);
-                };
-                
-                nativeImg.onerror = function() {
-                    status.innerText = "Error decoding image data package.";
-                };
-            } catch (err) {
-                status.innerText = "Failed parsing incoming string parameters.";
-            }
+                }, 33);
+            };
+            
+            nativeImg.onerror = function() {
+                status.innerText = "Error: Image text data is corrupt or incomplete.";
+            };
         } else {
-            status.innerText = "No image found. Check shortcut URL variable layout.";
+            status.innerText = "Error: Link is missing the screenshot data variable.";
         }
 
         button.addEventListener('click', async () => {
