@@ -3,36 +3,39 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000000; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
         #pipBtn { 
             position: absolute; top: 15px; left: 5%; width: 90%; height: 50px; 
             background: #007AFF; color: white; border: none; font-size: 16px; 
-            font-weight: bold; border-radius: 12px; z-index: 10; cursor: pointer;
-            box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
+            font-weight: bold; border-radius: 12px; z-index: 100; cursor: pointer;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.6);
         }
         #pipBtn:active { background: #0056b3; }
-        /* Live Frame View Container */
-        #webFrame {
-            position: absolute; top: 0; left: 0; width: 600px; height: 1000px;
-            border: none; transform-origin: top left; z-index: 1;
+        
+        /* Forces the web view frame container to span the entire screen */
+        #webContainer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
         }
-        canvas { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0.01; z-index: 2; }
-        video { position: absolute; bottom: 10px; right: 10px; width: 1px; height: 1px; opacity: 0.01; z-index: 5; }
+        iframe { width: 100%; height: 100%; border: none; }
+        
+        /* Invisible native media asset track hook forcing presentation window to trigger */
+        video { position: absolute; bottom: 0; right: 0; width: 1px; height: 1px; opacity: 0.01; z-index: -1; }
     </style>
 </head>
 <body>
 
     <button id="pipBtn">⚡️ POP LIVE PAGE INTO FLOATING WINDOW ⚡️</button>
-    <iframe id="webFrame" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
-    <canvas id="renderCanvas" width="600" height="1000"></canvas>
-    <video id="pipVideo" playsinline muted loop></video>
+    
+    <div id="webContainer">
+        <iframe id="liveFrame"></iframe>
+    </div>
+    
+    <video id="pipVideo" playsinline muted loop src="https://assets.mixkit.co/videos/preview/mixkit-abstract-laser-lights-background-loop-41743-large.mp4"></video>
 
     <script>
         const video = document.getElementById('pipVideo');
         const button = document.getElementById('pipBtn');
-        const canvas = document.getElementById('renderCanvas');
-        const frame = document.getElementById('webFrame');
-        const ctx = canvas.getContext('2d');
+        const frame = document.getElementById('liveFrame');
 
         const urlParams = new URLSearchParams(window.location.search);
         let targetUrl = urlParams.get('url') || "https://wikipedia.org";
@@ -42,47 +45,21 @@
         }
         if (!targetUrl.startsWith('http')) { targetUrl = 'https://' + targetUrl; }
 
-        // Route the live website straight into the embedded frame viewport
+        // Load the live page inside the document container viewport
         frame.src = targetUrl;
-
-        function updateCanvasStream() {
-            try {
-                // Wipe previous frame
-                ctx.fillStyle = "#1a1a1a";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                // Draw the actual live iframe layer pixels straight onto the streaming canvas matrix
-                ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
-            } catch (e) {
-                // Fallback indicator overlay block if cross-origin security rules get tight
-                ctx.fillStyle = "#ffffff";
-                ctx.font = "bold 24px sans-serif";
-                ctx.fillText("Streaming Native Web Frame...", 50, 200);
-            }
-        }
-
-        // Lock frame updates directly to keep the video context fluid
-        setInterval(updateCanvasStream, 33);
-
-        let streamCapture = canvas.captureStream(30); 
-        video.srcObject = streamCapture;
 
         button.addEventListener('click', async () => {
             try {
-                streamCapture = canvas.captureStream(30);
-                video.srcObject = streamCapture;
-                
                 await video.play();
 
                 if (video.webkitSetPresentationMode) {
+                    // Triggers iOS presentation layer immediately
                     video.webkitSetPresentationMode('picture-in-picture');
                 } else if (document.pictureInPictureEnabled) {
                     await video.requestPictureInPicture();
                 }
             } catch (err) {
-                console.error(err);
-                streamCapture = canvas.captureStream(30);
-                video.srcObject = streamCapture;
+                console.error("Presentation Target Exception:", err);
                 await video.play();
                 if (video.webkitSetPresentationMode) video.webkitSetPresentationMode('picture-in-picture');
             }
@@ -90,5 +67,4 @@
     </script>
 </body>
 </html>
-
 
