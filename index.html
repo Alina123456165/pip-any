@@ -3,14 +3,14 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0b0b0c; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #08080a; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
         #pipBtn { 
             position: absolute; top: 15px; left: 5%; width: 90%; height: 50px; 
             background: #007AFF; color: white; border: none; font-size: 16px; 
             font-weight: bold; border-radius: 12px; z-index: 10; cursor: pointer;
             box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
         }
-        #pipBtn:active { background: #0056b3; }
+        #pipBtn:transparent { opacity: 0.4; }
         canvas { display: none; }
         video { position: absolute; bottom: 10px; right: 10px; width: 1px; height: 1px; opacity: 0.01; z-index: 5; }
     </style>
@@ -40,73 +40,83 @@
             domainName = new URL(targetUrl).hostname.replace('www.', '');
         } catch(e) {}
 
-        let scrollY = 0;
-        let pulseTime = 0;
-
-        function renderPipeline() {
-            // Clear stream canvas layout context
-            ctx.fillStyle = "#0b0b0c";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Header panel context layout border
-            ctx.fillStyle = "#121214";
-            ctx.fillRect(0, 0, canvas.width, 100);
-            ctx.strokeStyle = "#1e1e24";
-            ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.moveTo(0, 100); ctx.lineTo(canvas.width, 100); ctx.stroke();
-            
-            // Active Engine Pulse Indicator
-            pulseTime += 0.04;
-            let alpha = 0.6 + Math.sin(pulseTime) * 0.4;
-            ctx.fillStyle = `rgba(52, 199, 89, ${alpha})`;
-            ctx.beginPath(); ctx.arc(45, 50, 7, 0, 2 * Math.PI); ctx.fill();
-
-            ctx.fillStyle = "#a1a1aa";
-            ctx.font = "bold 14px monospace";
-            ctx.fillText("AUDIO & LINK STREAM ACTIVE", 65, 55);
-
-            // Infinite loop boundaries layout computation
-            scrollY -= 0.5; 
-            if (scrollY < -400) { scrollY = 150; }
-
-            ctx.save();
-            ctx.beginPath(); ctx.rect(0, 100, canvas.width, canvas.height - 100); ctx.clip();
-
-            // Main Website Tracking Details
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 46px -apple-system, sans-serif";
-            ctx.fillText(domainName, 45, 260 + scrollY);
-            
-            ctx.fillStyle = "#007AFF";
-            ctx.font = "500 20px -apple-system, sans-serif";
-            let shortUrl = targetUrl.length > 50 ? targetUrl.substring(0, 47) + "..." : targetUrl;
-            ctx.fillText(shortUrl, 45, 315 + scrollY);
-
-            // Environment telemetry readouts
-            ctx.fillStyle = "#3a3a3c";
-            ctx.font = "400 15px -apple-system, sans-serif";
-            ctx.fillText("Pipeline Mode: Apple Native Video Stream Standard", 45, 375 + scrollY);
-            ctx.fillText("Session Status: Background Thread Executing", 45, 405 + scrollY);
-            ctx.fillText("Device Output Context: Target Checked Safe", 45, 435 + scrollY);
-            
-            ctx.restore();
-
-            // Native hardware animation thread hook
-            requestAnimationFrame(renderPipeline);
+        // Active background particle generator parameters
+        let particles = [];
+        for(let i = 0; i < 25; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 3 + 1,
+                speed: Math.random() * 1 + 0.5
+            });
         }
 
-        // Kickstart hardware display renderer loop context loop
-        requestAnimationFrame(renderPipeline);
+        let pulse = 0;
 
-        // Standard dynamic media stream hook configuration setup
-        let activeStream = canvas.captureStream(30); 
-        video.srcObject = activeStream;
+        function drawLoop() {
+            // Render Background Base
+            ctx.fillStyle = "#08080a";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Live Moving Background Matrix (Forces Safari to keep video context alive)
+            ctx.fillStyle = "rgba(0, 122, 255, 0.15)";
+            particles.forEach(p => {
+                p.y -= p.speed;
+                if(p.y < 0) { p.y = canvas.height; p.x = Math.random() * canvas.width; }
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Status Control Panel Header Layout
+            ctx.fillStyle = "#121216";
+            ctx.fillRect(0, 0, canvas.width, 110);
+            ctx.strokeStyle = "#1c1c22";
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(0, 110); ctx.lineTo(canvas.width, 110); ctx.stroke();
+
+            // Pumping Indicator Dot
+            pulse += 0.07;
+            let dotAlpha = 0.5 + Math.sin(pulse) * 0.5;
+            ctx.fillStyle = `rgba(52, 199, 89, ${dotAlpha})`;
+            ctx.beginPath(); ctx.arc(45, 55, 8, 0, Math.PI * 2); ctx.fill();
+
+            // Header Labels
+            ctx.fillStyle = "#aeaeb2";
+            ctx.font = "bold 15px monospace";
+            ctx.fillText("LIVE MEDIA STREAM ACTIVE", 70, 60);
+
+            // Main Layout Container Text
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 44px -apple-system, sans-serif";
+            ctx.fillText(domainName, 45, 240);
+
+            ctx.fillStyle = "#007AFF";
+            ctx.font = "500 20px -apple-system, sans-serif";
+            let shortUrl = targetUrl.length > 48 ? targetUrl.substring(0, 45) + "..." : targetUrl;
+            ctx.fillText(shortUrl, 45, 295);
+
+            // Interface diagnostics metadata telemetry
+            ctx.fillStyle = "#48484a";
+            ctx.font = "600 14px monospace";
+            ctx.fillText(`STREAM FREQUENCY: 30FPS // HARWARE ACCELERATED`, 45, 380);
+            ctx.fillText(`ROUTING PORT: LIVE CANVAS PIP LINK`, 45, 410);
+
+            requestAnimationFrame(drawLoop);
+        }
+
+        // Initialize execution frame threading loop
+        requestAnimationFrame(drawLoop);
+
+        // Bind raw stream outputs
+        let mediaStream = canvas.captureStream(30);
+        video.srcObject = mediaStream;
 
         button.addEventListener('click', async () => {
             try {
-                // Hard reset engine stream link inside the processing thread loop to bypass cache crashes
-                activeStream = canvas.captureStream(30);
-                video.srcObject = activeStream;
+                // Instantly re-verify stream mapping coordinates to wipe iOS execution memory clean
+                mediaStream = canvas.captureStream(30);
+                video.srcObject = mediaStream;
                 
                 await video.play();
 
@@ -116,10 +126,9 @@
                     await video.requestPictureInPicture();
                 }
             } catch (err) {
-                console.error("PiP Engine Crash Recovery Action Triggered:", err);
-                // Last ditch hardware re-route sequence execution pipeline block
-                activeStream = canvas.captureStream(30);
-                video.srcObject = activeStream;
+                console.error(err);
+                mediaStream = canvas.captureStream(30);
+                video.srcObject = mediaStream;
                 await video.play();
                 if (video.webkitSetPresentationMode) video.webkitSetPresentationMode('picture-in-picture');
             }
