@@ -3,8 +3,7 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #202124; font-family: sans-serif; }
-        iframe { width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0; z-index: 1; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
         
         #pipBtn { 
             position: absolute; top: 15px; left: 5%; width: 90%; height: 50px; 
@@ -12,61 +11,81 @@
             font-weight: bold; border-radius: 12px; z-index: 10; cursor: pointer;
             box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
         }
-        /* Hidden canvas that changes static content into video packets */
+        /* Hidden layout canvas generating the frame data loop */
         canvas { display: none; }
         video { position: absolute; bottom: 10px; right: 10px; width: 1px; height: 1px; opacity: 0.01; z-index: 5; }
+        #previewText { position: absolute; top: 80px; width: 100%; text-align: center; color: #888; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <button id="pipBtn">⚡️ POP PAGE INTO FLOATING WINDOW ⚡️</button>
-    <iframe src="about:blank" id="webFrame"></iframe>
+    <div id="previewText">Fetching web layer data snapshot...</div>
 
-    <canvas id="renderCanvas" width="400" height="600"></canvas>
+    <canvas id="renderCanvas" width="600" height="800"></canvas>
     <video id="pipVideo" playsinline muted loop></video>
 
     <script>
         const video = document.getElementById('pipVideo');
         const button = document.getElementById('pipBtn');
-        const frame = document.getElementById('webFrame');
         const canvas = document.getElementById('renderCanvas');
         const ctx = canvas.getContext('2d');
+        const previewText = document.getElementById('previewText');
 
-        // Grab current link from Siri Share Sheet input 
         const urlParams = new URLSearchParams(window.location.search);
         let targetUrl = urlParams.get('url') || "https://wikipedia.org";
+        
         if(targetUrl.includes("en.wikipedia.org")) {
             targetUrl = targetUrl.replace("en.wikipedia.org", "en.m.wikipedia.org");
         }
-        frame.src = targetUrl;
 
-        // CANVAS STREAM GENERATOR: Converts text views into an active media loop
-        function startCanvasStream() {
-            ctx.fillStyle = "#202124";
+        // Use a secure, open-source proxy to render the webpage visual data matrix
+        const img = new Image();
+        img.crossOrigin = "anonymous"; 
+        
+        // This generates a static thumbnail view of the layout canvas securely
+        img.src = `https://thum.io{targetUrl}`;
+
+        img.onload = function() {
+            previewText.innerHTML = "Web view ready. Click the button above!";
+            startLiveRender();
+        };
+
+        img.onerror = function() {
+            previewText.innerHTML = "Error rendering target link layout.";
+            // Draw a fallback canvas block if tracking filters interfere
+            ctx.fillStyle = "#222";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#ffffff";
+            ctx.fillStyle = "#fff";
             ctx.font = "20px Arial";
-            ctx.fillText("Wikipedia Snapshot", 20, 50);
-            
-            // Generate a real 10fps fake video stream track out of the static canvas
+            ctx.fillText("Could not stream website canvas content safely.", 50, 100);
+        };
+
+        function startLiveRender() {
+            // Constantly render the site photo onto the canvas memory layer
+            setInterval(() => {
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            }, 100);
+
+            // Turn that picture canvas array into an active video feed for Apple WebKit
             const stream = canvas.captureStream(10); 
             video.srcObject = stream;
             video.play();
         }
-
-        window.addEventListener('DOMContentLoaded', startCanvasStream);
 
         button.addEventListener('click', async () => {
             try {
                 if (video.webkitSetPresentationMode) {
                     video.webkitSetPresentationMode('picture-in-picture');
                     button.style.display = 'none';
+                    previewText.style.display = 'none';
                 } else if (document.pictureInPictureEnabled) {
                     await video.requestPictureInPicture();
                     button.style.display = 'none';
+                    previewText.style.display = 'none';
                 }
             } catch (err) {
-                alert("Please wait 2 seconds for canvas to buffer and try tap again.");
+                alert("Please wait a moment for the canvas image buffer to settle.");
             }
         });
     </script>
