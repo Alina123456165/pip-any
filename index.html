@@ -1,26 +1,30 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body { background: #000; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        #launchBtn { padding: 20px 40px; font-size: 20px; background: #FF3B30; border: none; border-radius: 12px; color: white; }
-    </style>
-</head>
 <body>
-    <button id="launchBtn">FORCE PIP</button>
-    <video id="vid" playsinline muted src="https://www.w3schools.com/html/mov_bbb.mp4"></video>
+    <button id="btn" style="padding:50px; font-size:30px;">CLICK TO START PIP</button>
+    
+    <video id="v" playsinline muted style="display:none;">
+        <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+    </video>
 
     <script>
-        const vid = document.getElementById('vid');
-        document.getElementById('launchBtn').onclick = async () => {
+        const btn = document.getElementById('btn');
+        const v = document.getElementById('v');
+
+        btn.onclick = async () => {
             try {
-                await vid.play();
-                if (vid.webkitSupportsPresentationMode('picture-in-picture')) {
-                    vid.webkitSetPresentationMode('picture-in-picture');
+                // Force load
+                v.load();
+                // Force play
+                await v.play();
+                // Trigger PiP
+                if (v.webkitSupportsPresentationMode('picture-in-picture')) {
+                    v.webkitSetPresentationMode('picture-in-picture');
+                } else {
+                    alert('Your browser doesn’t support PiP.');
                 }
-            } catch (err) {
-                alert("iOS Error: " + err.message);
+            } catch (e) {
+                alert('Blocked: ' + e.message);
             }
         };
     </script>
