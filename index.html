@@ -1,31 +1,36 @@
 <!DOCTYPE html>
 <html>
 <body>
-    <button id="btn" style="padding:50px; font-size:30px;">CLICK TO START PIP</button>
-    
-    <video id="v" playsinline muted style="display:none;">
-        <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-    </video>
+    <button id="btn" style="padding:40px; font-size:20px;">START PIP STREAM</button>
+    <iframe id="frame" src="https://www.wikipedia.org" style="width:100%; height:500px;"></iframe>
+    <canvas id="canvas" width="640" height="360" style="display:none;"></canvas>
+    <video id="vid" playsinline muted autoplay style="display:none;"></video>
 
     <script>
         const btn = document.getElementById('btn');
-        const v = document.getElementById('v');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const vid = document.getElementById('vid');
 
         btn.onclick = async () => {
-            try {
-                // Force load
-                v.load();
-                // Force play
-                await v.play();
-                // Trigger PiP
-                if (v.webkitSupportsPresentationMode('picture-in-picture')) {
-                    v.webkitSetPresentationMode('picture-in-picture');
-                } else {
-                    alert('Your browser doesn’t support PiP.');
-                }
-            } catch (e) {
-                alert('Blocked: ' + e.message);
+            // Capture the canvas as a stream
+            const stream = canvas.captureStream(30);
+            vid.srcObject = stream;
+            vid.play();
+
+            // Loop to "paint" the iframe into the canvas (if possible)
+            function draw() {
+                // NOTE: This will fail on sites like Wikipedia due to security
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, 640, 360);
+                requestAnimationFrame(draw);
             }
+            draw();
+
+            // Trigger PiP
+            setTimeout(() => {
+                vid.webkitSetPresentationMode('picture-in-picture');
+            }, 500);
         };
     </script>
 </body>
