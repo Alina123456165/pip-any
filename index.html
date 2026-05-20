@@ -1,36 +1,18 @@
 <!DOCTYPE html>
 <html>
-<body>
-    <button id="btn" style="padding:40px; font-size:20px;">START PIP STREAM</button>
-    <iframe id="frame" src="https://www.wikipedia.org" style="width:100%; height:500px;"></iframe>
-    <canvas id="canvas" width="640" height="360" style="display:none;"></canvas>
-    <video id="vid" playsinline muted autoplay style="display:none;"></video>
+<body style="background:black;">
+    <button id="p" style="padding: 100px; width: 100%; font-size: 24px;">CLICK ME</button>
+    <video id="v" playsinline webkit-playsinline muted src="https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s.mp4"></video>
 
     <script>
-        const btn = document.getElementById('btn');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const vid = document.getElementById('vid');
-
-        btn.onclick = async () => {
-            // Capture the canvas as a stream
-            const stream = canvas.captureStream(30);
-            vid.srcObject = stream;
-            vid.play();
-
-            // Loop to "paint" the iframe into the canvas (if possible)
-            function draw() {
-                // NOTE: This will fail on sites like Wikipedia due to security
-                ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, 640, 360);
-                requestAnimationFrame(draw);
+        const v = document.getElementById('v');
+        document.getElementById('p').onclick = async () => {
+            try {
+                await v.play();
+                v.webkitSetPresentationMode('picture-in-picture');
+            } catch (e) {
+                alert("Error: " + e.message);
             }
-            draw();
-
-            // Trigger PiP
-            setTimeout(() => {
-                vid.webkitSetPresentationMode('picture-in-picture');
-            }, 500);
         };
     </script>
 </body>
