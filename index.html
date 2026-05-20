@@ -1,15 +1,23 @@
 <!DOCTYPE html>
 <html>
-<body style="background:black;">
-    <button id="p" style="padding: 100px; width: 100%; font-size: 24px;">CLICK ME</button>
-    <video id="v" playsinline webkit-playsinline muted src="https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s.mp4"></video>
+<body style="margin:0; background:#000;">
+    <button id="p" style="width:100vw; height:100vh; border:none; background:#222; color:#fff; font-size:24px;">CLICK TO START PIP</button>
+    <video id="v" playsinline muted style="display:none;"></video>
 
     <script>
         const v = document.getElementById('v');
-        document.getElementById('p').onclick = async () => {
+        const p = document.getElementById('p');
+
+        p.onclick = async () => {
+            // Force the source immediately on click
+            v.src = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+            
             try {
                 await v.play();
-                v.webkitSetPresentationMode('picture-in-picture');
+                if (v.webkitSupportsPresentationMode('picture-in-picture')) {
+                    v.webkitSetPresentationMode('picture-in-picture');
+                    p.style.display = 'none'; // Hide button after success
+                }
             } catch (e) {
                 alert("Error: " + e.message);
             }
