@@ -3,38 +3,24 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { background: #000; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; }
-        #launchBtn { padding: 20px 40px; font-size: 20px; background: #007AFF; border-radius: 12px; border: none; color: white; cursor: pointer; }
-        #vid { display: none; }
+        body { background: #000; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        #launchBtn { padding: 20px 40px; font-size: 20px; background: #FF3B30; border: none; border-radius: 12px; color: white; }
     </style>
 </head>
 <body>
-    <button id="launchBtn">ENTER PIP</button>
-    <video id="vid" playsinline muted></video>
+    <button id="launchBtn">FORCE PIP</button>
+    <video id="vid" playsinline muted src="https://www.w3schools.com/html/mov_bbb.mp4"></video>
 
     <script>
-        const btn = document.getElementById('launchBtn');
         const vid = document.getElementById('vid');
-
-        // Extract the URL from the query string
-        const params = new URLSearchParams(window.location.search);
-        const targetUrl = params.get('url');
-
-        btn.onclick = async () => {
-            if (targetUrl) {
-                // Point the video to the source if it's a direct stream
-                // Note: Most static sites (Reddit/Wiki) don't have a direct MP4
-                // You usually need to find the video element ON the page.
-                vid.src = targetUrl; 
+        document.getElementById('launchBtn').onclick = async () => {
+            try {
                 await vid.play();
-                
                 if (vid.webkitSupportsPresentationMode('picture-in-picture')) {
                     vid.webkitSetPresentationMode('picture-in-picture');
-                } else {
-                    alert("PiP not supported on this device/browser.");
                 }
-            } else {
-                alert("No URL provided.");
+            } catch (err) {
+                alert("iOS Error: " + err.message);
             }
         };
     </script>
