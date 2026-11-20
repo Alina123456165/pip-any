@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,6 +51,18 @@ html, body {
     font-size: 14px;
 }
 
+.launch {
+    margin-top: 28px;
+    padding: 12px 32px;
+    background: #000;
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
 .fadeout {
     opacity: 0;
     transition: opacity 0.45s ease;
@@ -65,14 +78,12 @@ html, body {
         a6.1 6.1 0 1 1-6.1-6.1c.4 0 .8 0 1.2.1v3.4
         a2.8 2.8 0 1 0 1.7 2.6V2h3.2
         a7.1 7.1 0 0 0 4.3 4.3v1.9Z"
-        fill="#25F4EE"
-        transform="translate(-1.1 0)"/>
+        fill="#25F4EE" transform="translate(-1.1 0)"/>
         <path d="M19.6 8.2a7.1 7.1 0 0 1-4.3-1.4v7.1
         a6.1 6.1 0 1 1-6.1-6.1c.4 0 .8 0 1.2.1v3.4
         a2.8 2.8 0 1 0 1.7 2.6V2h3.2
         a7.1 7.1 0 0 0 4.3 4.3v1.9Z"
-        fill="#FE2C55"
-        transform="translate(0.8 0.5)"/>
+        fill="#FE2C55" transform="translate(0.8 0.5)"/>
         <path d="M19.6 8.2a7.1 7.1 0 0 1-4.3-1.4v7.1
         a6.1 6.1 0 1 1-6.1-6.1c.4 0 .8 0 1.2.1v3.4
         a2.8 2.8 0 1 0 1.7 2.6V2h3.2
@@ -81,21 +92,26 @@ html, body {
     </svg>
 
     <div class="text">TikTok</div>
-    <div class="sub">Launching...</div>
+    <div class="sub">Ready to launch</div>
+
+    <button class="launch" id="launchButton">
+        Open TikTok
+    </button>
 </div>
 
 <script>
 (function () {
     const url = "https://www.tiktok.com/";
     const splash = document.getElementById("splash");
+    const button = document.getElementById("launchButton");
 
-    setTimeout(function () {
+    button.addEventListener("click", function () {
         splash.classList.add("fadeout");
 
         setTimeout(function () {
-            window.location.replace(url);
+            window.location.href = url;
         }, 450);
-    }, 900);
+    });
 })();
 </script>
 
